@@ -14,107 +14,127 @@ const cleanText = (text) => text.replace(/\s+/g, " ").trim();
 
 //TODO: MAKE IT SO IT REPLACES THE FILE RATHER THAN KEEP ADDING IT
 //* CODE RELATED TO EXTRACTING REALESTATE LISTINGS (BELOW) *// 
+
+// Enhanced axios request function with retry logic
+const axiosWithRetry = async (url, retries = 3, delay = 1000, timeout = 10000) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await axios.get(url, { 
+        timeout: timeout,
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+      });
+    } catch (err) {
+      if (i === retries - 1) throw err;
+      console.log(`Attempt ${i + 1} failed. Retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+};
+
 // Function to extract listing information from a page
 const extractListingInfo = ($, element) => ({
   listingId: $(element).attr("data-listing-id"),
-  shareUrl: $(element).attr("ata-share-url"),
-  listingDetails: cleanText(
-    $(element).find(".mrp-listing-summary-outer").text()
-  ),
+  shareUrl: $(element).attr("data-share-url"), // Fixed typo here
+  listingDetails: cleanText($(element).find(".mrp-listing-summary-outer").text()),
   price: $(element).find(".mrp-listing-price-container").text().trim(),
   address: cleanText($(element).find(".mrp-listing-address-info").text()),
 });
 
+// Function to get listings from a page 
 // Function to get listings from a page
 async function getLinksFromPage(url) {
   try {
     const { data } = await axios.get(url);
     const $ = cheerio.load(data);
-    return $("li.mrp-listing-result")
-      .map((i, element) => extractListingInfo($, element))
-      .get();
+    return $("li.mrp-listing-result").map((i, element) => extractListingInfo($, element)).get();
   } catch (error) {
     console.error("Error fetching the page:", error);
     return [];
   }
 }
 
-// Function to scrape detailed information from a listing page
+
+// Enhanced function to scrape listing details
 async function scrapeListingDetails(shareUrl) {
   try {
-    const { data } = await axios.get(shareUrl);
+    const { data } = await axiosWithRetry(shareUrl);
     const $ = cheerio.load(data);
-    return cleanText($(".mrp-listing-info-container").text());
+    return cleanText($('.mrp-listing-info-container').text());
   } catch (error) {
-    console.error(
-      `Error fetching the listing details from ${shareUrl}:`,
-      error
-    );
+    console.error(`Error fetching the listing details from ${shareUrl}:`, error.message);
     return null;
   }
 }
 
-// Function to scrape all listings with details
+// Enhanced function to scrape all listings with details
 async function scrapeAllListingsWithDetails(mainUrl) {
   const listings = await getLinksFromPage(mainUrl);
   const detailedListings = await Promise.all(
-    listings.map(async (listing) => ({
-      ...listing,
-      detailedInfo: await scrapeListingDetails(listing.shareUrl),
-    }))
+    listings.map(async (listing) => {
+      try {
+        const detailedInfo = await scrapeListingDetails(listing.shareUrl);
+        return { ...listing, detailedInfo };
+      } catch (error) {
+        console.error(`Failed to fetch details for ${listing.shareUrl}:`, error.message);
+        return { ...listing, detailedInfo: null };
+      }
+    })
   );
-  return detailedListings.filter((listing) => listing.detailedInfo !== null);
+  return detailedListings.filter(listing => listing.detailedInfo !== null);
 }
 
-// Function to save scraped atat to a file
+
+// Function to save scraped data to a file
 const saveScrapedDataToFile = (data, fileName) => {
   fs.writeFileSync(fileName, JSON.stringify(data, null, 2))
   console.log(`Data saved to ${fileName}`);
 }
 
 // Function to upload the file to OpenAI vector store
-const uploadFileToOpenAI = async (fileName) => {
-  try {
-    const file = await openai.files.create({
-      file: fs.createReadStream(fileName),
-      purpose: "assistants",
-    });
+// const uploadFileToOpenAI = async (fileName) => {
+//   try {
+//     const file = await openai.files.create({
+//       file: fs.createReadStream(fileName),
+//       purpose: "assistants",
+//     });
 
-    const myVectorStoreFile = await openai.beta.vectorStores.files.create(
-      "vs_wjbc6c0aO6Rf6krRnQjWMjGF",
-      {
-        file_id: file.id,
-      }
-    );
-    console.log(myVectorStoreFile);
-  } catch (error) {
-    console.error("Error uploading the file to OpenAI:", error);
-  }
-};
+//     const myVectorStoreFile = await openai.beta.vectorStores.files.create(
+//       "vs_wjbc6c0aO6Rf6krRnQjWMjGF",
+//       {
+//         file_id: file.id,
+//       }
+//     );
+//     console.log(myVectorStoreFile);
+//   } catch (error) {
+//     console.error("Error uploading the file to OpenAI:", error);
+//   }
+// };
 
-// Main function to scrape and update the vector store daily
-const scrapeAndUpdate = async () => {
-  try {
-    const listings = await scrapeAllListingsWithDetails("https://dorisgee.com/mylistings.html");
+// // Main function to scrape and update the vector store daily
+// const scrapeAndUpdate = async () => {
+//   try {
+//     const listings = await scrapeAllListingsWithDetails("https://dorisgee.com/mylistings.html");
     
-    // Save the scraped data to a file
-    const fileName = `scraped_data_${new Date().toISOString().split('T')[0]}.json`;
-    saveScrapedDataToFile(listings, fileName);
+//     // Save the scraped data to a file
+//     const fileName = `listings${new Date().toISOString().split('T')[0]}.json`;
+//     saveScrapedDataToFile(listings, fileName);
     
-    // Upload the file to OpenAI vector store
-    await uploadFileToOpenAI(fileName);
+//     // Upload the file to OpenAI vector store
+//     await uploadFileToOpenAI(fileName);
 
-    console.log("Scraping and uploading completed.");
-  } catch (error) {
-    console.error("An error occurred during scraping and updating:", error);
-  }
-};
+//     console.log("Scraping and uploading completed.");
+//   } catch (error) {
+//     console.error("An error occurred during scraping and updating:", error);
+//   }
+// };
 
-// Schedule the task to run every day at midnight
-setInterval(async () => {
-  console.log("Running scrapeAndUpdate function for testing...");
-  await scrapeAndUpdate();
-}, 30 * 1000); // 60 * 1000 milliseconds = 1 minute
+// // Schedule the task to run every day at midnight
+// setInterval(async () => {
+//   console.log("Running scrapeAndUpdate function for testing...");
+//   await scrapeAndUpdate();
+// }, 30 * 1000); // 60 * 1000 milliseconds = 1 minute
 
 //* CODE RELATED TO EXTRACTING REALESTATE LISTINGS (ABOVE) *//
 
@@ -177,18 +197,27 @@ const runAssistantAndRetreiveResponse = async (threadId) => {
 async function main() {
   try {
     //! TRYING TO ADD FILES TO FILEBASE VECTORSTORE
-    const file = await openai.files.create({
-      file: fs.createReadStream('test.txt'),
-      purpose: 'assistants'
-    })
+    // const file = await openai.files.create({
+    //   file: fs.createReadStream('test.txt'),
+    //   purpose: 'assistants'
+    // })
 
-    const myVectorStoreFile = await openai.beta.vectorStores.files.create(
-      "vs_wjbc6c0aO6Rf6krRnQjWMjGF",
-      {
-        file_id: file.id
-      }
-    );
-    console.log(myVectorStoreFile);
+    // const myVectorStoreFile = await openai.beta.vectorStores.files.create(
+    //   "vs_wjbc6c0aO6Rf6krRnQjWMjGF",
+    //   {
+    //     file_id: file.id
+    //   }
+    // );
+  
+    // console.log(myVectorStoreFile);
+
+    const listings = await scrapeAllListingsWithDetails("https://dorisgee.com/mylistings.html");
+    console.log(listings)
+
+    
+    // Save the scraped data to a file
+    // const fileName = `listings${new Date().toISOString().split('T')[0]}.json`;
+    // saveScrapedDataToFile(listings, fileName);
 
 
     const assisant = await retrieveAssistant();

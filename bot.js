@@ -41,8 +41,7 @@ const extractListingInfo = ($, element) => ({
   price: $(element).find(".mrp-listing-price-container").text().trim(),
   address: cleanText($(element).find(".mrp-listing-address-info").text()),
 });
-
-// Function to get listings from a page 
+ 
 // Function to get listings from a page
 async function getLinksFromPage(url) {
   try {
@@ -54,7 +53,6 @@ async function getLinksFromPage(url) {
     return [];
   }
 }
-
 
 // Enhanced function to scrape listing details
 async function scrapeListingDetails(shareUrl) {
@@ -93,48 +91,48 @@ const saveScrapedDataToFile = (data, fileName) => {
 }
 
 // Function to upload the file to OpenAI vector store
-// const uploadFileToOpenAI = async (fileName) => {
-//   try {
-//     const file = await openai.files.create({
-//       file: fs.createReadStream(fileName),
-//       purpose: "assistants",
-//     });
+const uploadFileToOpenAI = async (fileName) => {
+  try {
+    const file = await openai.files.create({
+      file: fs.createReadStream(fileName),
+      purpose: "assistants",
+    });
 
-//     const myVectorStoreFile = await openai.beta.vectorStores.files.create(
-//       "vs_wjbc6c0aO6Rf6krRnQjWMjGF",
-//       {
-//         file_id: file.id,
-//       }
-//     );
-//     console.log(myVectorStoreFile);
-//   } catch (error) {
-//     console.error("Error uploading the file to OpenAI:", error);
-//   }
-// };
+    const myVectorStoreFile = await openai.beta.vectorStores.files.create(
+      "vs_wjbc6c0aO6Rf6krRnQjWMjGF",
+      {
+        file_id: file.id,
+      }
+    );
+    console.log(myVectorStoreFile);
+  } catch (error) {
+    console.error("Error uploading the file to OpenAI:", error);
+  }
+};
 
-// // Main function to scrape and update the vector store daily
-// const scrapeAndUpdate = async () => {
-//   try {
-//     const listings = await scrapeAllListingsWithDetails("https://dorisgee.com/mylistings.html");
+// Main function to scrape and update the vector store daily
+const scrapeAndUpdate = async () => {
+  try {
+    const listings = await scrapeAllListingsWithDetails("https://dorisgee.com/mylistings.html");
     
-//     // Save the scraped data to a file
-//     const fileName = `listings${new Date().toISOString().split('T')[0]}.json`;
-//     saveScrapedDataToFile(listings, fileName);
+    // Save the scraped data to a file
+    const fileName = `listings${new Date().toISOString().split('T')[0]}.json`;
+    saveScrapedDataToFile(listings, fileName);
     
-//     // Upload the file to OpenAI vector store
-//     await uploadFileToOpenAI(fileName);
+    // Upload the file to OpenAI vector store
+    await uploadFileToOpenAI(fileName);
 
-//     console.log("Scraping and uploading completed.");
-//   } catch (error) {
-//     console.error("An error occurred during scraping and updating:", error);
-//   }
-// };
+    console.log("Scraping and uploading completed.");
+  } catch (error) {
+    console.error("An error occurred during scraping and updating:", error);
+  }
+};
 
-// // Schedule the task to run every day at midnight
-// setInterval(async () => {
-//   console.log("Running scrapeAndUpdate function for testing...");
-//   await scrapeAndUpdate();
-// }, 30 * 1000); // 60 * 1000 milliseconds = 1 minute
+// Schedule the task to run every day at midnight
+setInterval(async () => {
+  console.log("Running scrapeAndUpdate function for testing...");
+  await scrapeAndUpdate();
+}, 30 * 1000); // 60 * 1000 milliseconds = 1 minute
 
 //* CODE RELATED TO EXTRACTING REALESTATE LISTINGS (ABOVE) *//
 
@@ -196,38 +194,11 @@ const runAssistantAndRetreiveResponse = async (threadId) => {
 // Main function to run the scraper
 async function main() {
   try {
-    //! TRYING TO ADD FILES TO FILEBASE VECTORSTORE
-    // const file = await openai.files.create({
-    //   file: fs.createReadStream('test.txt'),
-    //   purpose: 'assistants'
-    // })
-
-    // const myVectorStoreFile = await openai.beta.vectorStores.files.create(
-    //   "vs_wjbc6c0aO6Rf6krRnQjWMjGF",
-    //   {
-    //     file_id: file.id
-    //   }
-    // );
-  
-    // console.log(myVectorStoreFile);
-
-    const listings = await scrapeAllListingsWithDetails("https://dorisgee.com/mylistings.html");
-    console.log(listings)
-
-    
-    // Save the scraped data to a file
-    // const fileName = `listings${new Date().toISOString().split('T')[0]}.json`;
-    // saveScrapedDataToFile(listings, fileName);
-
-
     const assisant = await retrieveAssistant();
     const thread = await createThread();
 
     await addMessageToThread(thread.id, "Hello");
     runAssistantAndRetreiveResponse(thread.id);
-
-    // const results = await scrapeAllListingsWithDetails('https://dorisgee.com/mylistings.html');
-    // console.log(JSON.stringify(results, null, 2));
   } catch (error) {
     console.error("An error occurred during scraping:", error);
   }

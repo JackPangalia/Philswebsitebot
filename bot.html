@@ -1,3 +1,5 @@
+<!--* THIS IS AN AI CHATBOT FOR PHILL MOORE, THE BOT WITH BE EMBEADED INTO HIS MYREALPAGE WEBSITE * -->
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -7,51 +9,124 @@
   </head>
   <body>
     <div id="chatbot-container">
-      <div id = 'chatbot-top-bar'>
-        <div id = 'notch'></div>
-        <div id = 'chatbot-top-bar-profile'>AI</div>
+      <div id="chatbot-top-bar-area">
+        <h3>How can we help you</h3>
+
+        <button>close*</button>
+      </div>
+      lorem31
+      <div id="chatbot-message-area">
+        <div class="user-message">
+          Lorem ipsum dolor sit, amet consectetur adipisicing elit. Soluta,
+          eveniet qui nesciunt illo consequatur aliquam.
+        </div>
+        <div class="chatbot-message">
+          Lorem ipsum dolor sit amet consectetur, adipisicing elit. Quo adipisci
+          aut ducimus quos unde modi quia dolor magnam soluta eos vitae illo,
+          obcaecati a pariatur, voluptate reprehenderit dolores. Laboriosam quae
+          impedit magni incidunt debitis eum iusto numquam reprehenderit
+          corporis dolores?
+        </div>
+
+        <div class="user-message">
+          Lorem ipsum dolor sit, amet consectetur adipisicing elit. Soluta,
+          eveniet qui nesciunt illo consequatur aliquam.
+        </div>
+        <div class="chatbot-message">
+          Lorem ipsum dolor sit amet consectetur, adipisicing elit. Quo adipisci
+          aut ducimus quos unde modi quia dolor magnam soluta eos vitae illo,
+          obcaecati a pariatur, voluptate reprehenderit dolores. Laboriosam quae
+          impedit magni incidunt debitis eum iusto numquam reprehenderit
+          corporis dolores?
+        </div>
+      </div>
+
+      <div id="chatbot-input-area">
+        <input placeholder="Ask me anything" />
+        <button>send*</button>
       </div>
     </div>
 
     <style>
       * {
+        margin: 0px;
         font-family: Arial, Helvetica, sans-serif;
       }
 
-      #chatbot-top-bar-profile {
-        width: 100%;
-        margin-left: 1.5rem;
-        font-size: 13px;
-        margin-top: 0.2rem;
-      }
-      #notch {
-        border-radius: 0.8rem;
-        margin-top: 0.69rem;
-        height: 1.4rem;
-        width: 5.25rem;
+      #chatbot-container {
+        border-radius: 1rem;
+        position: absolute;
+        right: 1.5vw;
+        bottom: 2.5vh;
+        border-left: solid 1px black;
+        border-right: solid 1px black;
+        border-bottom-left-radius: 1rem;
         background-color: black;
+        width: 32.5rem;
       }
-      #chatbot-top-bar {
-        background-color: #1f2937;
-        height: 4rem; 
-        border-top-left-radius: 1.9rem;
-        border-top-right-radius: 1.9rem;
 
-        color: white; 
+      #chatbot-top-bar-area {
+        border-top-right-radius: 1rem;
+        border-top-left-radius: 1rem;
+        display: flex;
+        justify-content: space-between;
+        background-color: black;
+        padding: 1.3rem;
+        color: white;
+      }
+
+      #chatbot-message-area {
+        overflow-y: scroll;
+        gap: 1rem;
+        padding-block: 1rem;
+        height: 33rem;
+        font-size: 1.15rem;
+        color: white;
         display: flex;
         flex-direction: column;
-        align-items: center;
       }
 
-      #chatbot-container {
-        background-color: white;
-        border-radius: 2.1rem;
-        border: solid 2.75px black;
-        /* width: 15.55rem; */
-        width: 17rem;
-        height: 37rem;
-        /* height: 31.5rem; */
-        /* padding: 1.5rem; */
+      .user-message {
+        border-radius: 0.5rem;
+        margin-right: 0.5rem;
+        margin-left: auto;
+        width: 80%;
+        padding: 0.8rem;
+        background-color: red;
+      }
+
+      .chatbot-message {
+        border-radius: 0.5rem;
+        margin-left: 0.5rem;
+        margin-right: auto;
+        width: 80%;
+        padding: 0.8rem;
+        background-color: #3f3f46;
+      }
+
+      #chatbot-input-area {
+        border-bottom: 1px solid black;
+        border-bottom-right-radius: 1rem;
+        border-bottom-left-radius: 1rem;
+
+        gap: 0.5rem;
+        justify-content: space-between;
+        display: flex;
+        padding: 1rem;
+      }
+
+      #chatbot-input-area input {
+        color: white;
+        background-color: transparent;
+        outline: none;
+        padding: 0.5rem;
+        width: 100%;
+        border: #374151 solid 1px;
+        border-radius: 1rem;
+        font-size: 1.28rem;
+      }
+
+      #chatbot-input-area button {
       }
     </style>
   </body>

@@ -12,9 +12,23 @@
       <div id="chatbot-top-bar-area">
         <h3>How can we help you</h3>
 
-        <button>close*</button>
+        <button>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="size-6"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M6 18 18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
       </div>
-      lorem31
       <div id="chatbot-message-area">
         <div class="user-message">
           Lorem ipsum dolor sit, amet consectetur adipisicing elit. Soluta,
@@ -43,7 +57,23 @@
 
       <div id="chatbot-input-area">
         <input placeholder="Ask me anything" />
-        <button>send*</button>
+
+        <button>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="size-6"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"
+            />
+          </svg>
+        </button>
       </div>
     </div>
 
@@ -58,11 +88,10 @@
         position: absolute;
         right: 1.5vw;
         bottom: 2.5vh;
-        border-left: solid 1px black;
-        border-right: solid 1px black;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
         border-bottom-left-radius: 1rem;
-        background-color: black;
-        width: 32.5rem;
+        background-color: white;
+        width: 23vw;
       }
 
       #chatbot-top-bar-area {
@@ -70,8 +99,26 @@
         border-top-left-radius: 1rem;
         display: flex;
         justify-content: space-between;
-        background-color: black;
+        background-color: #09090b;
         padding: 1.3rem;
+        color: white;
+        font-size: 0.8rem;
+      }
+
+      #chatbot-top-bar-area button {
+        outline: none;
+        border: none;
+        background-color: transparent;
+        padding: 0px;
+        width: 1.3rem;
+        height: 1rem;
+      }
+
+      #chatbot-top-bar-area button:hover {
+        cursor: pointer;
+      }
+
+      #chatbot-top-bar-area button svg {
         color: white;
       }
 
@@ -79,9 +126,8 @@
         overflow-y: scroll;
         gap: 1rem;
         padding-block: 1rem;
-        height: 33rem;
-        font-size: 1.15rem;
-        color: white;
+        height: 45vh;
+        font-size: 0.95rem;
         display: flex;
         flex-direction: column;
       }
@@ -90,22 +136,23 @@
         border-radius: 0.5rem;
         margin-right: 0.5rem;
         margin-left: auto;
-        width: 80%;
-        padding: 0.8rem;
-        background-color: red;
+        width: 72%;
+        padding: 1.7rem;
+        color: white;
+        background-color: #09090b;
       }
 
       .chatbot-message {
         border-radius: 0.5rem;
         margin-left: 0.5rem;
         margin-right: auto;
-        width: 80%;
-        padding: 0.8rem;
-        background-color: #3f3f46;
+        width: 72%;
+        padding: 1.7rem;
+        background-color: #f3f4f6;
       }
 
       #chatbot-input-area {
-        border-bottom: 1px solid black;
+        /* border-bottom: 1px solid black; */
         border-bottom-right-radius: 1rem;
         border-bottom-left-radius: 1rem;
 
@@ -116,17 +163,27 @@
       }
 
       #chatbot-input-area input {
-        color: white;
+        color: black;
         background-color: transparent;
         outline: none;
-        padding: 0.5rem;
+        padding-inline: 1rem;
+        padding-block: 0.5rem;
         width: 100%;
         border: #374151 solid 1px;
         border-radius: 1rem;
-        font-size: 1.28rem;
+        font-size: 1rem;
       }
 
       #chatbot-input-area button {
+        outline: none;
+        border: none;
+        background-color: transparent;
+        padding: 0px;
+        width: 1.9rem;
+      }
+
+      #chatbot-input-area button:hover {
+        cursor: pointer;
       }
     </style>
   </body>

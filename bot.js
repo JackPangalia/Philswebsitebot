@@ -6,6 +6,7 @@ import OpenAI from "openai";
 import fs from 'fs'
 import cron from 'node-cron'
 import express from 'express';
+import cors from 'cors'
 
 
 // Create an Express app
@@ -13,6 +14,10 @@ const app = express();
 const port = 3000;
 
 // Middleware to parse JSON and enable CORS
+app.use(cors({
+  origin: 'http://127.0.0.1:5500'
+}))
+
 app.use(express.json());
 
 

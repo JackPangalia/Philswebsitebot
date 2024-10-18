@@ -1,0 +1,8 @@
+<properties>
+address: "123 Main St",
+price: "$3,000,000",
+bedrooms: "6",
+bathrooms: "6",
+url: "https://www.example.com/344",
+imageUrl: "https://exampleiamge.com/344"
+<properties />.

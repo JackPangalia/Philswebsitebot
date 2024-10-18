@@ -97,23 +97,54 @@
         const lines = response.split("\n");
         let formattedResponse = "";
         let inList = false;
+        let inProperty = false;
+        let propertyContent = "";
+        let propertyDetails = "";
+        let propertyImage = "";
 
         for (let line of lines) {
           // Format bold text
           line = line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
 
-          if (line.trim().startsWith("-")) {
+          if (line.trim() === "<property>") {
+            inProperty = true;
+            propertyContent = "<div class='property'>";
+            propertyDetails = "<div class='property-details'>";
+          } else if (line.trim() === "</property>") {
+            inProperty = false;
+            propertyDetails += "</div>"; // Close property-details div
+            propertyContent += propertyImage + propertyDetails + "</div>"; // Combine image and details
+            formattedResponse += propertyContent;
+            propertyContent = "";
+            propertyDetails = "";
+            propertyImage = "";
+          } else if (inProperty) {
+            if (line.startsWith("Price:")) {
+              propertyDetails += `<p class="price">${line.trim()}</p>`;
+            } else if (line.startsWith("Bedrooms:")) {
+              propertyDetails += `<p class="bedrooms">${line.trim()}</p>`;
+            } else if (line.startsWith("Bathrooms:")) {
+              propertyDetails += `<p class="bathrooms">${line.trim()}</p>`;
+            } else if (line.startsWith("[View Listing]")) {
+              const match = line.match(/\[View Listing\]\((.*?)\)/);
+              if (match) {
+                propertyDetails += `<a href="${match[1]}" class="view-listing">View Listing</a>`;
+              }
+            } else if (line.startsWith("![Image]")) {
+              const match = line.match(/!\[Image\]\((.*?)\)/);
+              if (match) {
+                propertyImage = `<img src="${match[1]}" alt="Property Image" class="property-image">`;
+              }
+            }
+          } else if (line.trim().startsWith("-")) {
             if (!inList) {
-              // Start a new list if we're not already in one
               formattedResponse += "<ul>";
               inList = true;
             }
-            // Add list item
             formattedResponse +=
               "<li>" + line.trim().substring(1).trim() + "</li>";
           } else {
             if (inList) {
-              // Close the list if we were in one
               formattedResponse += "</ul>";
               inList = false;
             }
@@ -121,14 +152,12 @@
           }
         }
 
-        // Close the list if the response ends with a list item
         if (inList) {
           formattedResponse += "</ul>";
         }
 
         return formattedResponse;
       }
-
       // Function to append a new message to the chat area
       function appendMessage(message, className) {
         const messageArea = document.getElementById("chatbot-message-area");
@@ -266,6 +295,19 @@
         width: 72%;
         padding: 1.7rem;
         background-color: #f3f4f6;
+      }
+
+      .property-image {
+        height: 9rem;
+        border-radius: 0.5rem;
+        width: 100%;
+
+      }
+
+      .property {
+        background-color: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
       }
 
       .bullet-point-ul {

@@ -8,8 +8,8 @@
   <body>
     <div id="chatbot-container">
       <div id="chatbot-top-bar-area">
-        <div id = 'chatbot-top-bar-area-logo'>
-          <image src = '/dp-logo-hor-2023.png' />
+        <div id="chatbot-top-bar-area-logo">
+          <image src="/dp-logo-hor-2023.png" />
           <!-- <h3>How can we help you</h3> -->
         </div>
 
@@ -59,16 +59,53 @@
     <script>
       // Function to parse and format the AI response
       // Function to parse and format the AI response
+      // function formatAIResponse(response) {
+      //   const lines = response.split("\n");
+      //   let formattedResponse = "";
+      //   let inList = false;
+
+      //   for (let line of lines) {
+      //     if (line.trim().startsWith("-")) {
+      //       if (!inList) {
+      //         // Start a new list if we're not already in one
+      //         formattedResponse += "<ul class = 'bullet-point-ul'>";
+      //         inList = true;
+      //       }
+      //       // Add list item
+      //       formattedResponse +=
+      //         "<li>" + line.trim().substring(1).trim() + "</li>";
+      //     } else {
+      //       if (inList) {
+      //         // Close the list if we were in one
+      //         formattedResponse += "</ul>";
+      //         inList = false;
+      //       }
+      //       formattedResponse += line + "<br>";
+      //     }
+      //   }
+
+      //   // Close the list if the response ends with a list item
+      //   if (inList) {
+      //     formattedResponse += "</ul>";
+      //   }
+
+      //   return formattedResponse;
+      // }
+
+      // Function to parse and format the AI response
       function formatAIResponse(response) {
         const lines = response.split("\n");
         let formattedResponse = "";
         let inList = false;
 
         for (let line of lines) {
+          // Format bold text
+          line = line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
           if (line.trim().startsWith("-")) {
             if (!inList) {
               // Start a new list if we're not already in one
-              formattedResponse += "<ul class = 'bullet-point-ul'>";
+              formattedResponse += "<ul>";
               inList = true;
             }
             // Add list item
@@ -193,7 +230,6 @@
       #chatbot-top-bar-area-logo img {
         width: 5rem;
       }
-
 
       #chatbot-top-bar-area button:hover {
         cursor: pointer;

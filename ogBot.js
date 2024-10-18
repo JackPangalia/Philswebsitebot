@@ -35,14 +35,24 @@ const axiosWithRetry = async (url, retries = 3, delay = 1000, timeout = 10000) =
   }
 };
 
-// Function to extract listing information from a page
-const extractListingInfo = ($, element) => ({
-  listingId: $(element).attr("data-listing-id"),
-  shareUrl: $(element).attr("data-share-url"), // Fixed typo here
-  listingDetails: cleanText($(element).find(".mrp-listing-summary-outer").text()),
-  price: $(element).find(".mrp-listing-price-container").text().trim(),
-  address: cleanText($(element).find(".mrp-listing-address-info").text()),
-});
+// Function to extract listing information from a page, including the image URL
+const extractListingInfo = ($, element) => {
+  const imgElement = $(element).find(".mrp-listing-main-image-container img");
+
+  // Extract image URL from 'data-src' or fallback to 'src'
+  const imageUrl = imgElement.attr("data-src") || imgElement.attr("src");
+
+  return {
+    listingId: $(element).attr("data-listing-id"),
+    shareUrl: $(element).attr("data-share-url"), // Fixed typo here
+    listingDetails: cleanText($(element).find(".mrp-listing-summary-outer").text()),
+    price: $(element).find(".mrp-listing-price-container").text().trim(),
+    address: cleanText($(element).find(".mrp-listing-address-info").text()),
+    imageUrl: imageUrl ? imageUrl.trim() : null,  // Safely include the image URL
+  };
+};
+
+
  
 // Function to get listings from a page
 async function getLinksFromPage(url) {
@@ -131,10 +141,10 @@ const scrapeAndUpdate = async () => {
 };
 
 // Schedule the task to run every day at midnight (00:00)
-cron.schedule('0 0 * * *', async () => {
-  console.log("Running scrapeAndUpdate function...");
-  await scrapeAndUpdate();
-});
+// cron.schedule('0 0 * * *', async () => {
+//   console.log("Running scrapeAndUpdate function...");
+//   await scrapeAndUpdate();
+// });
 
 //* CODE RELATED TO EXTRACTING REALESTATE LISTINGS (ABOVE) *//
 
@@ -196,11 +206,12 @@ const runAssistantAndRetreiveResponse = async (threadId) => {
 // Main function to run the scraper
 async function main() {
   try {
-    const assisant = await retrieveAssistant();
-    const thread = await createThread();
+    // const assisant = await retrieveAssistant();
+    // const thread = await createThread();
 
-    await addMessageToThread(thread.id, "Hello");
-    runAssistantAndRetreiveResponse(thread.id);
+    // await addMessageToThread(thread.id, "Hello");
+    // runAssistantAndRetreiveResponse(thread.id);
+    await scrapeAndUpdate()
   } catch (error) {
     console.error("An error occurred during scraping:", error);
   }

@@ -7,8 +7,8 @@ import fs from "fs";
 import cron from "node-cron";
 import express from "express";
 import cors from "cors";
-import http from 'http'
-import { Server } from 'socket.io'
+import http from "http";
+import { Server } from "socket.io";
 
 // Create an Express app
 const app = express();
@@ -22,8 +22,8 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type"],
     credentials: true,
-  }
-})
+  },
+});
 
 // Middleware to parse JSON and enable CORS
 app.use(
@@ -53,6 +53,129 @@ let assistant = null;
 // Define assistant ID
 const assistantId = "asst_bwx7JzTMDI0T8Px1cgnzNh8a";
 
+//* CODE RELATED TO EXTRACTING REALESTATE LISTINGS (BELOW) *//
+// Enhanced axios request function with retry logic
+const axiosWithRetry = async (
+  url,
+  retries = 3,
+  delay = 1000,
+  timeout = 10000
+) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await axios.get(url, {
+        timeout: timeout,
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        },
+      });
+    } catch (err) {
+      if (i === retries - 1) throw err;
+      console.log(`Attempt ${i + 1} failed. Retrying in ${delay}ms...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+};
+
+// Function to extract listing information from a page, including the image URL
+const extractListingInfo = ($, element) => {
+  const imgElement = $(element).find(".mrp-listing-main-image-container img");
+
+  // Extract image URL from 'data-src' or fallback to 'src'
+  const imageUrl = imgElement.attr("data-src") || imgElement.attr("src");
+
+  return {
+    listingId: $(element).attr("data-listing-id"),
+    shareUrl: $(element).attr("data-share-url"), // Fixed typo here
+    listingDetails: cleanText($(element).find(".mrp-listing-summary-outer").text()),
+    price: $(element).find(".mrp-listing-price-container").text().trim(),
+    address: cleanText($(element).find(".mrp-listing-address-info").text()),
+    imageUrl: imageUrl ? imageUrl.trim() : null,  // Safely include the image URL
+  };
+};
+
+// Function to get listings from a page
+async function getLinksFromPage(url) {
+  try {
+    const { data } = await axios.get(url);
+    const $ = cheerio.load(data);
+    return $("li.mrp-listing-result")
+      .map((i, element) => extractListingInfo($, element))
+      .get();
+  } catch (error) {
+    console.error("Error fetching the page:", error);
+    return [];
+  }
+}
+
+// Enhanced function to scrape listing details
+async function scrapeListingDetails(shareUrl) {
+  try {
+    const { data } = await axiosWithRetry(shareUrl);
+    const $ = cheerio.load(data);
+    return cleanText($(".mrp-listing-info-container").text());
+  } catch (error) {
+    console.error(
+      `Error fetching the listing details from ${shareUrl}:`,
+      error.message
+    );
+    return null;
+  }
+}
+
+// Enhanced function to scrape all listings with details
+async function scrapeAllListingsWithDetails(mainUrl) {
+  const listings = await getLinksFromPage(mainUrl);
+  const detailedListings = await Promise.all(
+    listings.map(async (listing) => {
+      try {
+        const detailedInfo = await scrapeListingDetails(listing.shareUrl);
+        return { ...listing, detailedInfo };
+      } catch (error) {
+        console.error(
+          `Failed to fetch details for ${listing.shareUrl}:`,
+          error.message
+        );
+        return { ...listing, detailedInfo: null };
+      }
+    })
+  );
+  return detailedListings.filter((listing) => listing.detailedInfo !== null);
+}
+
+// Function to save scraped data to a file
+const saveScrapedDataToFile = (data, fileName) => {
+  fs.writeFileSync(fileName, JSON.stringify(data, null, 2));
+  console.log(`Data saved to ${fileName}`);
+};
+
+// Main function to scrape and update the vector store daily
+const scrapeAndUpdate = async () => {
+  try {
+    const listings = await scrapeAllListingsWithDetails(
+      "https://dorisgee.com/mylistings.html"
+    );
+
+    // Save the scraped data to a file
+    const fileName = `listings${new Date().toISOString().split("T")[0]}.json`;
+    saveScrapedDataToFile(listings, fileName);
+
+    // Upload the file to OpenAI vector store
+    await uploadFileToOpenAI(fileName);
+
+    console.log("Scraping and uploading completed.");
+  } catch (error) {
+    console.error("An error occurred during scraping and updating:", error);
+  }
+};
+
+// Schedule the task to run every day at midnight (00:00)
+cron.schedule("0 0 * * *", async () => {
+  console.log("Running scrapeAndUpdate function...");
+  await scrapeAndUpdate();
+});
+
 // Helper function to upload file to OpenAI (same as before)
 const uploadFileToOpenAI = async (fileName) => {
   try {
@@ -72,6 +195,7 @@ const uploadFileToOpenAI = async (fileName) => {
     console.error("Error uploading the file to OpenAI:", error);
   }
 };
+//* CODE RELATED TO EXTRACTING REALESTATE LISTINGS (ABOVE) *//
 
 // Retrieve the assistant by ID //TODO: consider using parameter for "ID"
 const retrieveAssistant = async () => {
@@ -126,10 +250,10 @@ const runAssistantAndRetreiveResponse = async (threadId) => {
 
 //! ----- (BELOW) SOCKET.IO CODE RELATED TO GENERATING THE RESPONSE AND STREAMING THE RESPONE BACK TO THE FROTNEND ------- !//
 io.on("connection", (socket) => {
-  socket.on('send_prompt', (data) => {
-    const prompt = data.prompt``
-  })
-})
+  socket.on("send_prompt", (data) => {
+    const prompt = data.prompt``;
+  });
+});
 //! ----- (ABOVE) SOCKET.IO CODE RELATED TO GENERATING THE RESPONSE AND STREAMING THE RESPONE BACK TO THE FROTNEND ------- !//
 
 //* API endpoint to handle incoming user messages *//

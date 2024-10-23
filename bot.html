@@ -13,7 +13,7 @@
           <!-- <h3>How can we help you</h3> -->
         </div>
 
-        <button>
+        <button id="close-chatbot-btn">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -56,6 +56,8 @@
       </div>
     </div>
 
+    <button id = 'open-chatbot-btn'>AI Chatbot</button>
+
     <script>
       // Function to parse and format the AI response
       // Function to parse and format the AI response
@@ -92,6 +94,19 @@
       //   return formattedResponse;
       // }
 
+      // Add an event listener to the close button
+      document
+        .getElementById("close-chatbot-btn")
+        .addEventListener("click", function () {
+          // Hide the chatbot container by setting its display to 'none'
+          document.getElementById("chatbot-container").style.display = "none";
+        });
+        // Open chatbot and hide the open button
+      document.getElementById('open-chatbot-btn').addEventListener('click', function() {
+        document.getElementById('chatbot-container').style.display = 'block';
+      });
+      
+
       // Function to parse and format the AI response
       function formatAIResponse(response) {
         const lines = response.split("\n");
@@ -101,6 +116,9 @@
         let propertyContent = "";
         let propertyDetails = "";
         let propertyImage = "";
+        let listingLink = "";
+        let price = "";
+        let address = "";
 
         for (let line of lines) {
           // Format bold text
@@ -112,15 +130,26 @@
             propertyDetails = "<div class='property-details'>";
           } else if (line.trim() === "</property>") {
             inProperty = false;
-            propertyDetails += "</div>"; // Close property-details div
-            propertyContent += propertyImage + propertyDetails + "</div>"; // Combine image and details
+            propertyContent +=
+              propertyImage +
+              price +
+              propertyDetails +
+              "</div>" +
+              `<p class="address">${address}</p>` +
+              listingLink +
+              "</div>"; // Combine all elements
             formattedResponse += propertyContent;
             propertyContent = "";
             propertyDetails = "";
             propertyImage = "";
+            listingLink = "";
+            price = "";
+            address = "";
           } else if (inProperty) {
             if (line.startsWith("Price:")) {
-              propertyDetails += `<p class="price">${line.trim()}</p>`;
+              price = `<p class="price">${line.trim()}</p>`;
+            } else if (line.startsWith("Address:")) {
+              address = line.replace("Address:", "").trim();
             } else if (line.startsWith("Bedrooms:")) {
               propertyDetails += `<p class="bedrooms">${line.trim()}</p>`;
             } else if (line.startsWith("Bathrooms:")) {
@@ -128,7 +157,7 @@
             } else if (line.startsWith("[View Listing]")) {
               const match = line.match(/\[View Listing\]\((.*?)\)/);
               if (match) {
-                propertyDetails += `<a href="${match[1]}" class="view-listing">View Listing</a>`;
+                listingLink = `<a href="${match[1]}" class="view-listing">View Listing</a>`;
               }
             } else if (line.startsWith("![Image]")) {
               const match = line.match(/!\[Image\]\((.*?)\)/);
@@ -221,9 +250,23 @@
         font-family: Arial, Helvetica, sans-serif;
       }
 
-      #chatbot-container {
-        border-radius: 1rem;
+      #open-chatbot-btn {
         position: absolute;
+        right: 1.5vw;
+        bottom: 2.5vh;
+        background-color: black;
+        padding-inline: 3rem;
+        padding-block: 1rem;
+        color: white;
+        font-size: large;
+        border-radius: 2rem;
+      }
+
+      #chatbot-container {
+        z-index: 50;
+        border-radius: 1rem;
+        display: block;
+        position: fixed;
         right: 1.5vw;
         bottom: 2.5vh;
         box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
@@ -298,16 +341,48 @@
       }
 
       .property-image {
-        height: 9rem;
+        height: 14rem;
         border-radius: 0.5rem;
         width: 100%;
+        object-fit: fill;
+      }
 
+      .view-listing {
+        margin-top: 1rem;
+        color: white;
+        border-radius: 0.5rem;
+        background-color: black;
+        padding: 0.75rem;
+        text-decoration: none;
       }
 
       .property {
         background-color: white;
         padding: 1rem;
         border-radius: 0.5rem;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .property-details {
+        margin-bottom: 1rem;
+        display: flex;
+        gap: 6;
+      }
+
+      .price {
+        font-size: large;
+        font-weight: bold;
+        margin-block: 1rem;
+      }
+
+      .address {
+        font-size: x-small;
+        /* margin-bottom: 1rem; */
+      }
+
+      .bathrooms {
+        margin-left: 1rem;
       }
 
       .bullet-point-ul {

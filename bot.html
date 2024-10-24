@@ -4,13 +4,13 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bot</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
   </head>
   <body>
     <div id="chatbot-container">
       <div id="chatbot-top-bar-area">
         <div id="chatbot-top-bar-area-logo">
           <image src="/dp-logo-hor-2023.png" />
-          <!-- <h3>How can we help you</h3> -->
         </div>
 
         <button id="close-chatbot-btn">
@@ -56,56 +56,76 @@
       </div>
     </div>
 
-    <button id = 'open-chatbot-btn'>AI Chatbot</button>
+    <button id="open-chatbot-btn">AI Chatbot</button>
 
     <script>
-      // Function to parse and format the AI response
-      // Function to parse and format the AI response
-      // function formatAIResponse(response) {
-      //   const lines = response.split("\n");
-      //   let formattedResponse = "";
-      //   let inList = false;
+      // Initialize Socket.IO connection
+      const socket = io("http://localhost:3000");
 
-      //   for (let line of lines) {
-      //     if (line.trim().startsWith("-")) {
-      //       if (!inList) {
-      //         // Start a new list if we're not already in one
-      //         formattedResponse += "<ul class = 'bullet-point-ul'>";
-      //         inList = true;
-      //       }
-      //       // Add list item
-      //       formattedResponse +=
-      //         "<li>" + line.trim().substring(1).trim() + "</li>";
-      //     } else {
-      //       if (inList) {
-      //         // Close the list if we were in one
-      //         formattedResponse += "</ul>";
-      //         inList = false;
-      //       }
-      //       formattedResponse += line + "<br>";
-      //     }
-      //   }
+      // UI Elements
+      const messageArea = document.getElementById("chatbot-message-area");
+      const chatInput = document.getElementById("chatbot-input");
+      const sendButton = document.getElementById("send-btn");
 
-      //   // Close the list if the response ends with a list item
-      //   if (inList) {
-      //     formattedResponse += "</ul>";
-      //   }
+      // Current message being streamed
+      let currentMessageDiv = null;
+      let currentMessage = "";
 
-      //   return formattedResponse;
-      // }
-
-      // Add an event listener to the close button
+      // Handle UI visibility
       document
         .getElementById("close-chatbot-btn")
-        .addEventListener("click", function () {
-          // Hide the chatbot container by setting its display to 'none'
+        .addEventListener("click", () => {
           document.getElementById("chatbot-container").style.display = "none";
         });
-        // Open chatbot and hide the open button
-      document.getElementById('open-chatbot-btn').addEventListener('click', function() {
-        document.getElementById('chatbot-container').style.display = 'block';
+
+      document
+        .getElementById("open-chatbot-btn")
+        .addEventListener("click", () => {
+          document.getElementById("chatbot-container").style.display = "block";
+        });
+
+      // Function to append a user message
+      function appendUserMessage(message) {
+        const messageDiv = document.createElement("div");
+        messageDiv.className = "user-message";
+        messageDiv.textContent = message;
+        messageArea.appendChild(messageDiv);
+        messageArea.scrollTop = messageArea.scrollHeight;
+      }
+
+      // Function to start a new AI message
+      function startNewAIMessage() {
+        currentMessageDiv = document.createElement("div");
+        currentMessageDiv.className = "chatbot-message";
+        messageArea.appendChild(currentMessageDiv);
+        currentMessage = "";
+      }
+
+      // Function to update the current AI message
+      function updateAIMessage(text) {
+        currentMessage += text;
+        currentMessageDiv.innerHTML = formatAIResponse(currentMessage);
+        messageArea.scrollTop = messageArea.scrollHeight;
+      }
+
+      // Socket.IO event listeners
+      socket.on("textCreated", () => {
+        startNewAIMessage();
       });
-      
+
+      socket.on("textDelta", (data) => {
+        if (data.textDelta.value) {
+          updateAIMessage(data.textDelta.value);
+        }
+      });
+
+      socket.on("codeInterpreterInput", (input) => {
+        updateAIMessage("\n```\n" + input + "\n```\n");
+      });
+
+      socket.on("codeInterpreterLogs", (logs) => {
+        updateAIMessage("\nOutput:\n```\n" + logs + "\n```\n");
+      });
 
       // Function to parse and format the AI response
       function formatAIResponse(response) {
@@ -137,7 +157,7 @@
               "</div>" +
               `<p class="address">${address}</p>` +
               listingLink +
-              "</div>"; // Combine all elements
+              "</div>";
             formattedResponse += propertyContent;
             propertyContent = "";
             propertyDetails = "";
@@ -187,60 +207,28 @@
 
         return formattedResponse;
       }
-      // Function to append a new message to the chat area
-      function appendMessage(message, className) {
-        const messageArea = document.getElementById("chatbot-message-area");
-        const messageDiv = document.createElement("div");
-        messageDiv.className = className;
 
-        if (className === "chatbot-message") {
-          messageDiv.innerHTML = formatAIResponse(message);
-        } else {
-          messageDiv.textContent = message;
+      // Send message handler
+      sendButton.addEventListener("click", () => {
+        const message = chatInput.value.trim();
+        if (!message) return;
+
+        // Display user message
+        appendUserMessage(message);
+
+        // Send message to server
+        socket.emit("send_prompt", { prompt: message });
+
+        // Clear input
+        chatInput.value = "";
+      });
+
+      // Handle enter key
+      chatInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          sendButton.click();
         }
-
-        messageArea.appendChild(messageDiv);
-        messageArea.scrollTop = messageArea.scrollHeight;
-      }
-
-      // Function to handle the API call
-      async function sendMessageToAPI(userMessage) {
-        try {
-          const response = await fetch("http://localhost:3000/message", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ message: userMessage }),
-          });
-
-          const data = await response.json();
-          return data.aiMessage; // Adjust to match the actual response structure from your API
-        } catch (error) {
-          console.error("Error:", error);
-          return "Sorry, something went wrong.";
-        }
-      }
-
-      // Event listener for the send button
-      document
-        .getElementById("send-btn")
-        .addEventListener("click", async () => {
-          const userInput = document.getElementById("chatbot-input").value;
-          if (!userInput) return; // Exit if input is empty
-
-          // Display user's message
-          appendMessage(userInput, "user-message");
-
-          // Send the message to the API and get the response
-          const aiResponse = await sendMessageToAPI(userInput);
-
-          // Display AI's response
-          appendMessage(aiResponse, "chatbot-message");
-
-          // Clear the input field
-          document.getElementById("chatbot-input").value = "";
-        });
+      });
     </script>
 
     <style>

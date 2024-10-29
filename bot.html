@@ -70,6 +70,7 @@
       // Current message being streamed
       let currentMessageDiv = null;
       let currentMessage = "";
+      let loadingDiv = null;
 
       // Handle UI visibility
       document
@@ -84,6 +85,23 @@
           document.getElementById("chatbot-container").style.display = "block";
         });
 
+      // Function to show loading message
+      function showLoading() {
+        loadingDiv = document.createElement("div");
+        loadingDiv.className = "chatbot-message";
+        loadingDiv.innerHTML = "<p>Loading...</p>";
+        messageArea.appendChild(loadingDiv);
+        messageArea.scrollTop = messageArea.scrollHeight;
+      }
+
+      // Function to remove loading message
+      function removeLoading() {
+        if (loadingDiv) {
+          loadingDiv.remove();
+          loadingDiv = null;
+        }
+      }
+
       // Function to append a user message
       function appendUserMessage(message) {
         const messageDiv = document.createElement("div");
@@ -95,6 +113,7 @@
 
       // Function to start a new AI message
       function startNewAIMessage() {
+        removeLoading(); // Remove loading message when AI starts responding
         currentMessageDiv = document.createElement("div");
         currentMessageDiv.className = "chatbot-message";
         messageArea.appendChild(currentMessageDiv);
@@ -127,6 +146,8 @@
         updateAIMessage("\nOutput:\n```\n" + logs + "\n```\n");
       });
 
+      let load = false
+
       // Function to parse and format the AI response
       function formatAIResponse(response) {
         const lines = response.split("\n");
@@ -141,15 +162,20 @@
         let address = "";
 
         for (let line of lines) {
+          // console.log(line)
+          console.log(load)
           // Format bold text
           line = line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
 
+          
           if (line.trim() === "<property>") {
+            load = true
             inProperty = true;
             propertyContent = "<div class='property'>";
             propertyDetails = "<div class='property-details'>";
           } else if (line.trim() === "</property>") {
-            inProperty = false;
+            inProperty = true;
+
             propertyContent +=
               propertyImage +
               price +
@@ -216,6 +242,9 @@
         // Display user message
         appendUserMessage(message);
 
+        // Show loading message
+        showLoading();
+
         // Send message to server
         socket.emit("send_prompt", { prompt: message });
 
@@ -229,7 +258,6 @@
           sendButton.click();
         }
       });
-
     </script>
 
     <style>

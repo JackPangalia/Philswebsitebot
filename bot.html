@@ -122,8 +122,10 @@
 
       // Function to update the current AI message
       function updateAIMessage(text) {
+        // console.log('current message ', currentMessage)
         currentMessage += text;
         currentMessageDiv.innerHTML = formatAIResponse(currentMessage);
+        parseResponse(currentMessage);
         messageArea.scrollTop = messageArea.scrollHeight;
       }
 
@@ -146,7 +148,32 @@
         updateAIMessage("\nOutput:\n```\n" + logs + "\n```\n");
       });
 
-      let load = false
+      function parseResponse(response) {
+        const lines = response.split("\n");
+        let inProperty = false;
+
+        for (let line of lines) {
+          line = line.trim();
+
+          // Check for both <property> and </property> tags in the same line
+          if (line.includes("<property>") && line.includes("</property>")) {
+            console.log("Property opened and closed on the same line");
+            continue;
+          }
+
+          // Detect <property> opening tag
+          if (line.includes("<property>") && !inProperty) {
+            inProperty = true;
+            console.log("Property opened");
+          }
+
+          // Detect </property> closing tag
+          else if (line.includes("</property>") && inProperty) {
+            inProperty = false;
+            console.log("Property closed");
+          }
+        }
+      }
 
       // Function to parse and format the AI response
       function formatAIResponse(response) {
@@ -162,14 +189,11 @@
         let address = "";
 
         for (let line of lines) {
-          // console.log(line)
-          console.log(load)
           // Format bold text
           line = line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
 
-          
           if (line.trim() === "<property>") {
-            load = true
+            load = true;
             inProperty = true;
             propertyContent = "<div class='property'>";
             propertyDetails = "<div class='property-details'>";

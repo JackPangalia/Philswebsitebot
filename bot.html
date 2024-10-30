@@ -167,9 +167,31 @@
 
       // Function to update the current AI message
       function updateAIMessage(text) {
-        currentMessage += text;
-        currentMessageDiv.innerHTML = formatAIResponse(currentMessage);
-        messageArea.scrollTop = messageArea.scrollHeight;
+        // Process the incoming text character by character
+        for (let char of text) {
+          const tagFound = processCharacter(char);
+
+          if (isInsideProperty) {
+            propertyBuffer += char;
+          } else {
+            if (propertyBuffer && !isInsideProperty) {
+              // We just finished a property, process it
+              console.log("current message ", currentMessage);
+              console.log("property buffer", propertyBuffer);
+              // currentMessage += formatAIResponse(propertyBuffer);
+              currentMessage += formatAIResponse(`<property${propertyBuffer}>`);
+
+              propertyBuffer = "";
+            }
+            currentMessage += char;
+          }
+        }
+
+        // Only update display if we're not inside a property tag
+        if (!isInsideProperty) {
+          currentMessageDiv.innerHTML = formatAIResponse(currentMessage);
+          messageArea.scrollTop = messageArea.scrollHeight;
+        }
       }
 
       // Socket.IO event listeners
@@ -191,8 +213,6 @@
         updateAIMessage("\nOutput:\n```\n" + logs + "\n```\n");
       });
 
-      let load = false
-
       // Function to parse and format the AI response
       function formatAIResponse(response) {
         const lines = response.split("\n");
@@ -211,7 +231,6 @@
           line = line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
 
           if (line.trim() === "<property>") {
-            load = true
             inProperty = true;
             propertyContent = "<div class='property'>";
             propertyDetails = "<div class='property-details'>";

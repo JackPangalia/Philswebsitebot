@@ -9,9 +9,7 @@
   <body>
     <div id="chatbot-container">
       <div id="chatbot-top-bar-area">
-        <div id="chatbot-top-bar-area-logo">
-          <image src="/dp-logo-hor-2023.png" />
-        </div>
+   
 
         <button id="close-chatbot-btn">
           <svg
@@ -21,6 +19,7 @@
             stroke-width="1.5"
             stroke="currentColor"
             class="size-6"
+            ,.
           >
             <path
               stroke-linecap="round"
@@ -30,7 +29,10 @@
           </svg>
         </button>
       </div>
+      <div id = 'centonis-badge'>
+        <p>Powered by</p><a href = 'https://www.centonis.com/'>Centonis</a>
 
+      </div>
       <div id="chatbot-message-area">
         <!-- Messages will be added here dynamically -->
       </div>
@@ -71,25 +73,18 @@
       let currentMessageDiv = null;
       let currentMessage = "";
       let loadingDiv = null;
+      let propertyBuffer = "";
+      let isInsideProperty = false;
+      let propertyLoadingDiv = null;
+      let tagBuffer = ""; // New buffer for detecting tags
 
-      // Handle UI visibility
-      document
-        .getElementById("close-chatbot-btn")
-        .addEventListener("click", () => {
-          document.getElementById("chatbot-container").style.display = "none";
-        });
-
-      document
-        .getElementById("open-chatbot-btn")
-        .addEventListener("click", () => {
-          document.getElementById("chatbot-container").style.display = "block";
-        });
+      // [Previous UI visibility handlers remain the same]
 
       // Function to show loading message
       function showLoading() {
         loadingDiv = document.createElement("div");
         loadingDiv.className = "chatbot-message";
-        loadingDiv.innerHTML = "<p>Loading...</p>";
+        loadingDiv.innerHTML = "<div class='loader'></div>";
         messageArea.appendChild(loadingDiv);
         messageArea.scrollTop = messageArea.scrollHeight;
       }
@@ -99,6 +94,23 @@
         if (loadingDiv) {
           loadingDiv.remove();
           loadingDiv = null;
+        }
+      }
+
+      // Function to show property loading
+      function showPropertyLoading() {
+        propertyLoadingDiv = document.createElement("div");
+        propertyLoadingDiv.className = "chatbot-message";
+        propertyLoadingDiv.innerHTML = "<div class='loader'></div>";
+        currentMessageDiv.appendChild(propertyLoadingDiv);
+        messageArea.scrollTop = messageArea.scrollHeight;
+      }
+
+      // Function to remove property loading
+      function removePropertyLoading() {
+        if (propertyLoadingDiv) {
+          propertyLoadingDiv.remove();
+          propertyLoadingDiv = null;
         }
       }
 
@@ -113,18 +125,73 @@
 
       // Function to start a new AI message
       function startNewAIMessage() {
-        removeLoading(); // Remove loading message when AI starts responding
+        removeLoading();
         currentMessageDiv = document.createElement("div");
         currentMessageDiv.className = "chatbot-message";
         messageArea.appendChild(currentMessageDiv);
         currentMessage = "";
+        propertyBuffer = "";
+        isInsideProperty = false;
+        tagBuffer = ""; // Reset tag buffer
+      }
+
+      // Function to check for complete tags
+      function processCharacter(char) {
+        tagBuffer += char;
+        // console.log('tag buffer ', tagBuffer)
+        // Keep the tag buffer from growing too large
+        if (tagBuffer.length > 20) {
+          tagBuffer = tagBuffer.slice(-20);
+        }
+
+        // Check for opening property tag
+        if (tagBuffer.includes("<property>")) {
+          isInsideProperty = true;
+          showPropertyLoading();
+          // Clear the found tag from buffer
+          tagBuffer = tagBuffer.slice(tagBuffer.indexOf("<property>") + 10);
+          return true;
+        }
+
+        // Check for closing property tag
+        if (tagBuffer.includes("</property>")) {
+          isInsideProperty = false;
+          removePropertyLoading();
+          // Clear the found tag from buffer
+          tagBuffer = tagBuffer.slice(tagBuffer.indexOf("</property>") + 11);
+          return true;
+        }
+
+        return false;
       }
 
       // Function to update the current AI message
       function updateAIMessage(text) {
-        currentMessage += text;
-        currentMessageDiv.innerHTML = formatAIResponse(currentMessage);
-        messageArea.scrollTop = messageArea.scrollHeight;
+        // Process the incoming text character by character
+        for (let char of text) {
+          const tagFound = processCharacter(char);
+
+          if (isInsideProperty) {
+            propertyBuffer += char;
+          } else {
+            if (propertyBuffer && !isInsideProperty) {
+              // We just finished a property, process it
+              console.log("current message ", currentMessage);
+              console.log("property buffer", propertyBuffer);
+              // currentMessage += formatAIResponse(propertyBuffer);
+              currentMessage += formatAIResponse(`<property${propertyBuffer}>`);
+
+              propertyBuffer = "";
+            }
+            currentMessage += char;
+          }
+        }
+
+        // Only update display if we're not inside a property tag
+        if (!isInsideProperty) {
+          currentMessageDiv.innerHTML = formatAIResponse(currentMessage);
+          messageArea.scrollTop = messageArea.scrollHeight;
+        }
       }
 
       // Socket.IO event listeners
@@ -146,8 +213,6 @@
         updateAIMessage("\nOutput:\n```\n" + logs + "\n```\n");
       });
 
-      let load = false
-
       // Function to parse and format the AI response
       function formatAIResponse(response) {
         const lines = response.split("\n");
@@ -162,20 +227,15 @@
         let address = "";
 
         for (let line of lines) {
-          // console.log(line)
-          console.log(load)
           // Format bold text
           line = line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
 
-          
           if (line.trim() === "<property>") {
-            load = true
             inProperty = true;
             propertyContent = "<div class='property'>";
             propertyDetails = "<div class='property-details'>";
           } else if (line.trim() === "</property>") {
-            inProperty = true;
-
+            inProperty = false;
             propertyContent +=
               propertyImage +
               price +
@@ -262,6 +322,12 @@
 
     <style>
       /* Your existing styles */
+
+      .loading-p {
+        position: absolute;
+        top: 5rem;
+        left: 5rem;
+      }
       * {
         margin: 0px;
         font-family: Arial, Helvetica, sans-serif;
@@ -302,7 +368,7 @@
         box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
         border-bottom-left-radius: 1rem;
         background-color: white;
-        width: 32rem;
+        width: 29rem;
       }
 
       #chatbot-top-bar-area {
@@ -356,20 +422,22 @@
         margin-right: 0.5rem;
         margin-left: auto;
         width: 72%;
-        padding: 1.7rem;
+        padding: 1.9rem;
         color: white;
         background-color: #09090b;
-        font-size: 1.1rem;
+        font-size: 0.95rem;
+        
       }
 
       .chatbot-message {
-        font-size: 1.1rem;
+        font-size: 0.95rem;
         border-radius: 0.5rem;
         margin-left: 0.5rem;
         margin-right: auto;
         width: 72%;
-        padding: 1.7rem;
+        padding: 1.9rem;
         background-color: #f3f4f6;
+        color: #1f2937;
       }
 
       .property-image {
@@ -452,6 +520,38 @@
 
       #chatbot-input-area button:hover {
         cursor: pointer;
+      }
+
+      #centonis-badge {
+        display: flex;
+        font-size: 0.7rem;
+        justify-content: end;
+        margin-top: 1rem;
+        margin-right: 2rem;
+      }
+      #centonis-badge p {
+        margin-right: 3px;
+        color: gray;
+     
+      }
+      #centonis-badge a {
+        color: black;
+        text-decoration: none;
+      }
+
+      /* HTML: <div class="loader"></div> */
+      .loader {
+        width: 9px;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        border: 8px solid;
+        border-color: #000 #0000;
+        animation: l1 1s infinite;
+      }
+      @keyframes l1 {
+        to {
+          transform: rotate(0.5turn);
+        }
       }
     </style>
   </body>

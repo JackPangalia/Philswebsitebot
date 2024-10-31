@@ -9,8 +9,6 @@
   <body>
     <div id="chatbot-container">
       <div id="chatbot-top-bar-area">
-   
-
         <button id="close-chatbot-btn">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -29,11 +27,20 @@
           </svg>
         </button>
       </div>
-      <div id = 'centonis-badge'>
-        <p>Powered by</p><a href = 'https://www.centonis.com/'>Centonis</a>
 
-      </div>
       <div id="chatbot-message-area">
+        <div id="centonis-badge">
+          <p>Powered by</p>
+          <a href="https://www.centonis.com/">Centonis</a>
+        </div>
+        <p class="chatbot-label">AI chatbot</p>
+        <p class="chatbot-message">
+          Hello! 👋 If you're looking for properties in Burnaby, I can assist
+          you in finding the perfect match. Just share your preferences such as
+          desired locations, budget, property types, or any specific
+          requirements like bedrooms or amenities, and I'll help you find
+          suitable options. Let's start searching for your dream property! 🏡✨
+        </p>
         <!-- Messages will be added here dynamically -->
       </div>
 
@@ -126,6 +133,14 @@
       // Function to start a new AI message
       function startNewAIMessage() {
         removeLoading();
+        // Create the chatbot label
+        const chatbotLabel = document.createElement("p");
+        chatbotLabel.className = "chatbot-label"; // Add a class for styling
+        chatbotLabel.textContent = "AI chatbot";
+
+        // Append the chatbot label to the message area
+        messageArea.appendChild(chatbotLabel);
+
         currentMessageDiv = document.createElement("div");
         currentMessageDiv.className = "chatbot-message";
         messageArea.appendChild(currentMessageDiv);
@@ -368,7 +383,7 @@
         box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
         border-bottom-left-radius: 1rem;
         background-color: white;
-        width: 29rem;
+        width: 520px;
       }
 
       #chatbot-top-bar-area {
@@ -419,25 +434,32 @@
 
       .user-message {
         border-radius: 0.5rem;
-        margin-right: 0.5rem;
+        margin-right: 2rem;
         margin-left: auto;
-        width: 72%;
+        width: 67%;
         padding: 1.9rem;
         color: white;
         background-color: #09090b;
         font-size: 0.95rem;
-        
+        animation: slideInFromRight 0.5s forwards;
       }
 
       .chatbot-message {
-        font-size: 0.95rem;
+        font-size: medium;
         border-radius: 0.5rem;
-        margin-left: 0.5rem;
+        margin-left: 2rem;
         margin-right: auto;
-        width: 72%;
+        width: 67%;
         padding: 1.9rem;
         background-color: #f3f4f6;
         color: #1f2937;
+        animation: slideInFromLeft 0.5s forwards;
+      }
+
+      .chatbot-label {
+        margin-left: 2rem;
+        font-size: small;
+        color: gray;
       }
 
       .property-image {
@@ -523,16 +545,15 @@
       }
 
       #centonis-badge {
+        z-index: 0;
         display: flex;
         font-size: 0.7rem;
         justify-content: end;
-        margin-top: 1rem;
         margin-right: 2rem;
       }
       #centonis-badge p {
         margin-right: 3px;
         color: gray;
-     
       }
       #centonis-badge a {
         color: black;
@@ -541,16 +562,49 @@
 
       /* HTML: <div class="loader"></div> */
       .loader {
-        width: 9px;
-        aspect-ratio: 1;
-        border-radius: 50%;
-        border: 8px solid;
-        border-color: #000 #0000;
-        animation: l1 1s infinite;
+        width: 50px;
+        aspect-ratio: 1.8;
+        --_g: no-repeat radial-gradient(circle closest-side, #000 90%, #0000);
+        background: var(--_g) 0% 50%, var(--_g) 50% 50%, var(--_g) 100% 50%;
+        background-size: calc(100% / 3) 50%;
+        animation: l3 1s infinite linear;
       }
-      @keyframes l1 {
-        to {
-          transform: rotate(0.5turn);
+      @keyframes l3 {
+        20% {
+          background-position: 0% 0%, 50% 50%, 100% 50%;
+        }
+        40% {
+          background-position: 0% 100%, 50% 0%, 100% 50%;
+        }
+        60% {
+          background-position: 0% 50%, 50% 100%, 100% 0%;
+        }
+        80% {
+          background-position: 0% 50%, 50% 50%, 100% 100%;
+        }
+      }
+
+      /* Slide-in animation for user message */
+      @keyframes slideInFromLeft {
+        0% {
+          transform: translateX(-100%);
+          opacity: 0;
+        }
+        100% {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      /* Slide-in animation for chatbot message */
+      @keyframes slideInFromRight {
+        0% {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        100% {
+          transform: translateX(0);
+          opacity: 1;
         }
       }
     </style>

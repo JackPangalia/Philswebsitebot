@@ -153,18 +153,20 @@
       // Function to check for complete tags
       function processCharacter(char) {
         tagBuffer += char;
-        // console.log('tag buffer ', tagBuffer)
         // Keep the tag buffer from growing too large
-        if (tagBuffer.length > 20) {
-          tagBuffer = tagBuffer.slice(-20);
+        if (tagBuffer.length > 40) {
+          tagBuffer = tagBuffer.slice(-40);
         }
 
         // Check for opening property tag
         if (tagBuffer.includes("<property>")) {
           isInsideProperty = true;
           showPropertyLoading();
+
           // Clear the found tag from buffer
-          tagBuffer = tagBuffer.slice(tagBuffer.indexOf("<property>") + 10);
+          // tagBuffer = tagBuffer.slice(tagBuffer.indexOf("<property>") + 10);
+
+          tagBuffer = ''
           return true;
         }
 
@@ -172,8 +174,10 @@
         if (tagBuffer.includes("</property>")) {
           isInsideProperty = false;
           removePropertyLoading();
+
           // Clear the found tag from buffer
-          tagBuffer = tagBuffer.slice(tagBuffer.indexOf("</property>") + 11);
+          // tagBuffer = tagBuffer.slice(tagBuffer.indexOf("</property>") + 11);
+          tagBuffer = ''
           return true;
         }
 
@@ -184,6 +188,7 @@
       function updateAIMessage(text) {
         // Process the incoming text character by character
         for (let char of text) {
+          
           const tagFound = processCharacter(char);
 
           if (isInsideProperty) {
@@ -194,6 +199,8 @@
               console.log("current message ", currentMessage);
               console.log("property buffer", propertyBuffer);
               // currentMessage += formatAIResponse(propertyBuffer);
+              console.log('property buffer', propertyBuffer);
+              
               currentMessage += formatAIResponse(`<property${propertyBuffer}>`);
 
               propertyBuffer = "";
@@ -305,7 +312,6 @@
         if (inList) {
           formattedResponse += "</ul>";
         }
-
         return formattedResponse;
       }
 

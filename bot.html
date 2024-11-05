@@ -34,13 +34,36 @@
           <a href="https://www.centonis.com/">Centonis</a>
         </div>
         <p class="chatbot-label">AI chatbot</p>
-        <p class="chatbot-message">
+        <!-- <p class="chatbot-message">
           Hello! 👋 If you're looking for properties in Burnaby, I can assist
           you in finding the perfect match. Just share your preferences such as
           desired locations, budget, property types, or any specific
           requirements like bedrooms or amenities, and I'll help you find
           suitable options. Let's start searching for your dream property! 🏡✨
-        </p>
+        </p> -->
+        <div class="chatbot-message">
+          <div class="property">
+            <div class = 'image-container'>
+              <img
+                src="https://static.vecteezy.com/system/resources/thumbnails/023/308/053/small_2x/ai-generative-exterior-of-modern-luxury-house-with-garden-and-beautiful-sky-photo.jpg"
+                alt="Property Image"
+                class="property-image"
+              />
+            </div>
+
+            <p class="price">$3,399,900</p>
+            <div class="property-details">
+              <p class="bedrooms">Bedrooms: 8</p>
+              <p class="bathrooms">Bathrooms: 9</p>
+            </div>
+            <p class="address">6036 BRANTFORD Avenue Burnaby V5E 2R7</p>
+            <a
+              href="https://dorisgee.com/mylistings.html/listing.r2922793-6036-brantford-avenue-burnaby-v5e-2r7.102748296"
+              class="view-listing"
+              >View Listing</a
+            >
+          </div>
+        </div>
         <!-- Messages will be added here dynamically -->
       </div>
 
@@ -84,6 +107,8 @@
       let isInsideProperty = false;
       let propertyLoadingDiv = null;
       let tagBuffer = ""; // New buffer for detecting tags
+      let wholeTagBuffer = "";
+      let wholeMessage = "";
 
       // [Previous UI visibility handlers remain the same]
 
@@ -153,31 +178,38 @@
       // Function to check for complete tags
       function processCharacter(char) {
         tagBuffer += char;
+
+        wholeTagBuffer += char;
+        // console.log('whole tag buffer: ', wholeTagBuffer)
+        // console.log('tag buffer: ', tagBuffer)
+
         // Keep the tag buffer from growing too large
-        if (tagBuffer.length > 40) {
-          tagBuffer = tagBuffer.slice(-40);
+        if (tagBuffer.length > 20) {
+          tagBuffer = tagBuffer.slice(-20);
         }
 
         // Check for opening property tag
         if (tagBuffer.includes("<property>")) {
+          console.log("in property");
           isInsideProperty = true;
           showPropertyLoading();
 
           // Clear the found tag from buffer
           // tagBuffer = tagBuffer.slice(tagBuffer.indexOf("<property>") + 10);
 
-          tagBuffer = ''
+          tagBuffer = "";
           return true;
         }
 
         // Check for closing property tag
         if (tagBuffer.includes("</property>")) {
+          console.log("we outta this house");
           isInsideProperty = false;
           removePropertyLoading();
 
           // Clear the found tag from buffer
           // tagBuffer = tagBuffer.slice(tagBuffer.indexOf("</property>") + 11);
-          tagBuffer = ''
+          tagBuffer = "";
           return true;
         }
 
@@ -188,25 +220,8 @@
       function updateAIMessage(text) {
         // Process the incoming text character by character
         for (let char of text) {
-          
           const tagFound = processCharacter(char);
-
-          if (isInsideProperty) {
-            propertyBuffer += char;
-          } else {
-            if (propertyBuffer && !isInsideProperty) {
-              // We just finished a property, process it
-              console.log("current message ", currentMessage);
-              console.log("property buffer", propertyBuffer);
-              // currentMessage += formatAIResponse(propertyBuffer);
-              console.log('property buffer', propertyBuffer);
-              
-              currentMessage += formatAIResponse(`<property${propertyBuffer}>`);
-
-              propertyBuffer = "";
-            }
-            currentMessage += char;
-          }
+          currentMessage += char;
         }
 
         // Only update display if we're not inside a property tag
@@ -349,6 +364,7 @@
         top: 5rem;
         left: 5rem;
       }
+
       * {
         margin: 0px;
         font-family: Arial, Helvetica, sans-serif;
@@ -469,14 +485,23 @@
       }
 
       .property-image {
-        height: 14rem;
-        border-radius: 0.5rem;
+        opacity: 75%;
+        height: 11rem;
+        /* border-radius: 0.5rem; */
+        border-top-left-radius: 0.5rem;
+        border-top-right-radius: 0.5rem;
         width: 100%;
-        object-fit: fill;
+        object-fit: cover;
+      }
+
+      .image-container {
+        background-color: black;
       }
 
       .view-listing {
-        margin-top: 1rem;
+        width: fit-content;
+        margin-left: 1rem;
+        margin-block: 1rem;
         color: white;
         border-radius: 0.5rem;
         background-color: black;
@@ -486,25 +511,34 @@
 
       .property {
         background-color: white;
-        padding: 1rem;
+
         border-radius: 0.5rem;
         display: flex;
         flex-direction: column;
       }
 
       .property-details {
+        padding-inline: 1rem;
+
         margin-bottom: 1rem;
         display: flex;
         gap: 6;
       }
 
       .price {
+        height: 0;
+        color: white;
+        bottom: 3.5rem;
+        position: relative;
+        padding-inline: 1rem;
         font-size: large;
-        font-weight: bold;
-        margin-block: 1rem;
+        font-weight: bolder;
+        margin-top: 1rem;
       }
 
       .address {
+        padding-inline: 1rem;
+
         font-size: x-small;
         /* margin-bottom: 1rem; */
       }

@@ -43,7 +43,7 @@
         </p> -->
         <div class="chatbot-message">
           <div class="property">
-            <div class = 'image-container'>
+            <div class="image-container">
               <img
                 src="https://static.vecteezy.com/system/resources/thumbnails/023/308/053/small_2x/ai-generative-exterior-of-modern-luxury-house-with-garden-and-beautiful-sky-photo.jpg"
                 alt="Property Image"
@@ -251,6 +251,7 @@
       });
 
       // Function to parse and format the AI response
+      // Function to parse and format the AI response
       function formatAIResponse(response) {
         const lines = response.split("\n");
         let formattedResponse = "";
@@ -274,7 +275,9 @@
           } else if (line.trim() === "</property>") {
             inProperty = false;
             propertyContent +=
+              '<div class="image-container">' +
               propertyImage +
+              "</div>" +
               price +
               propertyDetails +
               "</div>" +
@@ -320,6 +323,8 @@
               formattedResponse += "</ul>";
               inList = false;
             }
+            // Format links only for content outside of property tags
+            line = line.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>');
             formattedResponse += line + "<br>";
           }
         }
@@ -327,6 +332,7 @@
         if (inList) {
           formattedResponse += "</ul>";
         }
+
         return formattedResponse;
       }
 
@@ -486,7 +492,7 @@
 
       .property-image {
         opacity: 75%;
-        height: 11rem;
+        height: 100%;
         /* border-radius: 0.5rem; */
         border-top-left-radius: 0.5rem;
         border-top-right-radius: 0.5rem;
@@ -495,6 +501,9 @@
       }
 
       .image-container {
+        height: 11em;
+        border-top-left-radius: 0.5rem;
+        border-top-right-radius: 0.5rem;
         background-color: black;
       }
 
@@ -506,6 +515,7 @@
         border-radius: 0.5rem;
         background-color: black;
         padding: 0.75rem;
+        font-size: small;
         text-decoration: none;
       }
 
@@ -519,7 +529,7 @@
 
       .property-details {
         padding-inline: 1rem;
-
+        font-size: small;
         margin-bottom: 1rem;
         display: flex;
         gap: 6;

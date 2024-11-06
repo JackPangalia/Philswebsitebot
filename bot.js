@@ -28,7 +28,7 @@ app.use(cors());
 // Define the openai client
 const openai = new OpenAI({
   apiKey:
-    "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",
+    "",
 });
 
 // Null values of the threadId and assistant yet to be created (These varibles will be populated with the respected values)

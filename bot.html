@@ -17,7 +17,6 @@
             stroke-width="1.5"
             stroke="currentColor"
             class="size-6"
-            ,.
           >
             <path
               stroke-linecap="round"
@@ -33,58 +32,29 @@
           <p>Powered by</p>
           <a href="https://www.centonis.com/">Centonis</a>
         </div>
-        <p class="chatbot-label">AI chatbot</p>
-        <!-- <p class="chatbot-message">
-          Hello! 👋 If you're looking for properties in Burnaby, I can assist
-          you in finding the perfect match. Just share your preferences such as
-          desired locations, budget, property types, or any specific
-          requirements like bedrooms or amenities, and I'll help you find
-          suitable options. Let's start searching for your dream property! 🏡✨
-        </p> -->
-        <div class="chatbot-message">
-          <div class="property">
-            <div class="image-container">
-              <img
-                src="https://static.vecteezy.com/system/resources/thumbnails/023/308/053/small_2x/ai-generative-exterior-of-modern-luxury-house-with-garden-and-beautiful-sky-photo.jpg"
-                alt="Property Image"
-                class="property-image"
-              />
-            </div>
-
-            <p class="price">$3,399,900</p>
-            <div class="property-details">
-              <p class="bedrooms">Bedrooms: 8</p>
-              <p class="bathrooms">Bathrooms: 9</p>
-            </div>
-            <p class="address">6036 BRANTFORD Avenue Burnaby V5E 2R7</p>
-            <a
-              href="https://dorisgee.com/mylistings.html/listing.r2922793-6036-brantford-avenue-burnaby-v5e-2r7.102748296"
-              class="view-listing"
-              >View Listing</a
-            >
-          </div>
-        </div>
-        <!-- Messages will be added here dynamically -->
       </div>
 
       <div id="chatbot-input-area">
-        <input id="chatbot-input" placeholder="Ask me anything" />
-        <button id="send-btn">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke-width="1.5"
-            stroke="currentColor"
-            class="size-6"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"
-            />
-          </svg>
-        </button>
+        <p>Disclaimer: AI may not guarantee full accuracy. Please verify.</p>
+        <div>
+          <input id="chatbot-input" placeholder="Ask me anything" />
+          <button id="send-btn">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="{1.5}"
+              stroke="currentColor"
+              className="size-5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -98,6 +68,9 @@
       const messageArea = document.getElementById("chatbot-message-area");
       const chatInput = document.getElementById("chatbot-input");
       const sendButton = document.getElementById("send-btn");
+      const chatbotContainer = document.getElementById("chatbot-container");
+      const closeChatbotBtn = document.getElementById("close-chatbot-btn");
+      const openChatbotBtn = document.getElementById("open-chatbot-btn");
 
       // Current message being streamed
       let currentMessageDiv = null;
@@ -106,13 +79,80 @@
       let propertyBuffer = "";
       let isInsideProperty = false;
       let propertyLoadingDiv = null;
-      let tagBuffer = ""; // New buffer for detecting tags
+      let tagBuffer = "";
       let wholeTagBuffer = "";
       let wholeMessage = "";
 
-      // [Previous UI visibility handlers remain the same]
+      // Chat history management
+      const STORAGE_KEY = "chatHistory";
 
-      // Function to show loading message
+      // Function to add intro message
+      function addIntroMessage() {
+        const label = document.createElement("p");
+        label.className = "chatbot-label";
+        label.textContent = "AI chatbot";
+
+        const intro = document.createElement("p");
+        intro.className = "chatbot-message";
+        intro.innerHTML = `Hello! 😊 I'm your virtual assistant here to help with all things real
+              estate for Phil Moore and Doris Gee. Whether you're searching for a
+              home, have questions about the buying or selling process, or just need
+              some guidance, I'm here for you! Let me know how I can assist, and
+              I'll do my best to find exactly what you're looking for`;
+
+        messageArea.appendChild(label);
+        messageArea.appendChild(intro);
+        saveChatHistory();
+      }
+
+      // Function to save chat history
+      function saveChatHistory() {
+        const messages = Array.from(messageArea.children)
+          .filter((element) => element.id !== "centonis-badge")
+          .map((element) => ({
+            type: element.className,
+            content: element.innerHTML,
+          }));
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      }
+
+      // Function to load chat history
+      function loadChatHistory() {
+        const savedHistory = sessionStorage.getItem(STORAGE_KEY);
+        if (savedHistory) {
+          const messages = JSON.parse(savedHistory);
+          messages.forEach((message) => {
+            const messageDiv = document.createElement("div");
+            messageDiv.className = message.type;
+            messageDiv.innerHTML = message.content;
+            messageArea.appendChild(messageDiv);
+          });
+          messageArea.scrollTop = messageArea.scrollHeight;
+        } else {
+          // Only add intro message if there's no chat history
+          addIntroMessage();
+        }
+      }
+
+      // Load chat history when page loads
+      document.addEventListener("DOMContentLoaded", () => {
+        loadChatHistory();
+      });
+
+      let isRefreshing = false;
+      let closeTimer;
+
+      // Open the chatbot
+      openChatbotBtn.addEventListener("click", () => {
+        chatbotContainer.style.display = "block";
+        messageArea.scrollTop = messageArea.scrollHeight;
+      });
+
+      // Close the chatbot
+      closeChatbotBtn.addEventListener("click", () => {
+        chatbotContainer.style.display = "none";
+      });
+
       function showLoading() {
         loadingDiv = document.createElement("div");
         loadingDiv.className = "chatbot-message";
@@ -121,7 +161,6 @@
         messageArea.scrollTop = messageArea.scrollHeight;
       }
 
-      // Function to remove loading message
       function removeLoading() {
         if (loadingDiv) {
           loadingDiv.remove();
@@ -129,7 +168,6 @@
         }
       }
 
-      // Function to show property loading
       function showPropertyLoading() {
         propertyLoadingDiv = document.createElement("div");
         propertyLoadingDiv.className = "chatbot-message";
@@ -138,7 +176,6 @@
         messageArea.scrollTop = messageArea.scrollHeight;
       }
 
-      // Function to remove property loading
       function removePropertyLoading() {
         if (propertyLoadingDiv) {
           propertyLoadingDiv.remove();
@@ -146,24 +183,20 @@
         }
       }
 
-      // Function to append a user message
       function appendUserMessage(message) {
         const messageDiv = document.createElement("div");
         messageDiv.className = "user-message";
         messageDiv.textContent = message;
         messageArea.appendChild(messageDiv);
         messageArea.scrollTop = messageArea.scrollHeight;
+        saveChatHistory(); // Save after adding user message
       }
 
-      // Function to start a new AI message
       function startNewAIMessage() {
         removeLoading();
-        // Create the chatbot label
         const chatbotLabel = document.createElement("p");
-        chatbotLabel.className = "chatbot-label"; // Add a class for styling
+        chatbotLabel.className = "chatbot-label";
         chatbotLabel.textContent = "AI chatbot";
-
-        // Append the chatbot label to the message area
         messageArea.appendChild(chatbotLabel);
 
         currentMessageDiv = document.createElement("div");
@@ -172,43 +205,26 @@
         currentMessage = "";
         propertyBuffer = "";
         isInsideProperty = false;
-        tagBuffer = ""; // Reset tag buffer
+        tagBuffer = "";
       }
 
-      // Function to check for complete tags
       function processCharacter(char) {
         tagBuffer += char;
-
         wholeTagBuffer += char;
-        // console.log('whole tag buffer: ', wholeTagBuffer)
-        // console.log('tag buffer: ', tagBuffer)
-
-        // Keep the tag buffer from growing too large
         if (tagBuffer.length > 20) {
           tagBuffer = tagBuffer.slice(-20);
         }
 
-        // Check for opening property tag
         if (tagBuffer.includes("<property>")) {
-          console.log("in property");
           isInsideProperty = true;
           showPropertyLoading();
-
-          // Clear the found tag from buffer
-          // tagBuffer = tagBuffer.slice(tagBuffer.indexOf("<property>") + 10);
-
           tagBuffer = "";
           return true;
         }
 
-        // Check for closing property tag
         if (tagBuffer.includes("</property>")) {
-          console.log("we outta this house");
           isInsideProperty = false;
           removePropertyLoading();
-
-          // Clear the found tag from buffer
-          // tagBuffer = tagBuffer.slice(tagBuffer.indexOf("</property>") + 11);
           tagBuffer = "";
           return true;
         }
@@ -216,18 +232,16 @@
         return false;
       }
 
-      // Function to update the current AI message
       function updateAIMessage(text) {
-        // Process the incoming text character by character
         for (let char of text) {
           const tagFound = processCharacter(char);
           currentMessage += char;
         }
 
-        // Only update display if we're not inside a property tag
         if (!isInsideProperty) {
           currentMessageDiv.innerHTML = formatAIResponse(currentMessage);
           messageArea.scrollTop = messageArea.scrollHeight;
+          saveChatHistory(); // Save after updating AI message
         }
       }
 
@@ -242,6 +256,37 @@
         }
       });
 
+      socket.on("quickReplies", (quickReplyJSON) => {
+        const quickReplies = JSON.parse(quickReplyJSON);
+        const quickRepliesDiv = document.createElement("div");
+        quickRepliesDiv.className = "quick-replies-container";
+
+        const quickReplyList = document.createElement("ul");
+        quickReplyList.className = "quick-replies-list";
+
+        quickReplies.smart_replies.forEach((reply) => {
+          const listItem = document.createElement("li");
+          const button = document.createElement("button");
+          button.className = "quick-reply-button";
+          button.textContent = reply;
+
+          button.addEventListener("click", () => {
+            appendUserMessage(reply);
+            showLoading();
+            socket.emit("send_prompt", { prompt: reply });
+            quickRepliesDiv.remove();
+          });
+
+          listItem.appendChild(button);
+          quickReplyList.appendChild(listItem);
+        });
+
+        quickRepliesDiv.appendChild(quickReplyList);
+        messageArea.appendChild(quickRepliesDiv);
+        messageArea.scrollTop = messageArea.scrollHeight;
+        saveChatHistory(); // Save after adding quick replies
+      });
+
       socket.on("codeInterpreterInput", (input) => {
         updateAIMessage("\n```\n" + input + "\n```\n");
       });
@@ -250,8 +295,7 @@
         updateAIMessage("\nOutput:\n```\n" + logs + "\n```\n");
       });
 
-      // Function to parse and format the AI response
-      // Function to parse and format the AI response
+      // Format AI response (keeping the existing function)
       function formatAIResponse(response) {
         const lines = response.split("\n");
         let formattedResponse = "";
@@ -265,8 +309,17 @@
         let address = "";
 
         for (let line of lines) {
-          // Format bold text
           line = line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+
+          if (line.trim().startsWith("###")) {
+            if (inList) {
+              formattedResponse += "</ul>";
+              inList = false;
+            }
+            const headingText = line.trim().substring(3).trim();
+            formattedResponse += `<h3>${headingText}</h3>`;
+            continue;
+          }
 
           if (line.trim() === "<property>") {
             inProperty = true;
@@ -323,7 +376,6 @@
               formattedResponse += "</ul>";
               inList = false;
             }
-            // Format links only for content outside of property tags
             line = line.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>');
             formattedResponse += line + "<br>";
           }
@@ -340,17 +392,9 @@
       sendButton.addEventListener("click", () => {
         const message = chatInput.value.trim();
         if (!message) return;
-
-        // Display user message
         appendUserMessage(message);
-
-        // Show loading message
         showLoading();
-
-        // Send message to server
         socket.emit("send_prompt", { prompt: message });
-
-        // Clear input
         chatInput.value = "";
       });
 
@@ -373,7 +417,34 @@
 
       * {
         margin: 0px;
-        font-family: Arial, Helvetica, sans-serif;
+        font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS",
+          sans-serif;
+      }
+
+      .quick-replies-container {
+        margin-inline: 2rem;
+      }
+
+      .quick-replies-list {
+        padding: 0;
+        text-decoration: none;
+        list-style-type: none;
+        animation: slideInFromLeft 0.5s forwards;
+      }
+
+      .quick-reply-button {
+        border-radius: 0.5rem;
+        border: solid black 1px;
+        padding-inline: 0.6em;
+        padding-block: 0.35em;
+        margin-block: 0.26em;
+        background-color: white;
+        font-size: 0.95rem;
+        text-align: left;
+      }
+      .quick-reply-button:hover {
+        cursor: pointer;
+        opacity: 0.79;
       }
 
       #close-chatbot-btn svg:hover {
@@ -404,7 +475,7 @@
       #chatbot-container {
         z-index: 50;
         border-radius: 1rem;
-        display: block;
+        display: none;
         position: fixed;
         right: 1.5vw;
         bottom: 2.5vh;
@@ -521,7 +592,6 @@
 
       .property {
         background-color: white;
-
         border-radius: 0.5rem;
         display: flex;
         flex-direction: column;
@@ -562,24 +632,34 @@
       }
 
       #chatbot-input-area {
+        padding-block: 2rem;
+        padding-inline: 2rem;
+      }
+
+      #chatbot-input-area p {
+        font-size: xx-small;
+        text-align: center;
+        margin-bottom: 0.6em;
+        color: #374151;
+      }
+      #chatbot-input-area div {
         border-bottom-right-radius: 1rem;
         border-bottom-left-radius: 1rem;
         gap: 0.5rem;
         justify-content: space-between;
         display: flex;
-        padding: 1rem;
       }
 
       #chatbot-input-area input {
         color: black;
-        background-color: transparent;
+        background-color: white;
         outline: none;
         padding-inline: 1rem;
         padding-block: 0.5rem;
         width: 100%;
         border: #374151 solid 1px;
-        border-radius: 1rem;
-        font-size: 1.1rem;
+        border-radius: 0.5rem;
+        font-size: 1rem;
       }
 
       #chatbot-input-area button {
@@ -613,7 +693,7 @@
       /* HTML: <div class="loader"></div> */
       .loader {
         width: 50px;
-        aspect-ratio: 1.8;
+        aspect-ratio: 4;
         --_g: no-repeat radial-gradient(circle closest-side, #000 90%, #0000);
         background: var(--_g) 0% 50%, var(--_g) 50% 50%, var(--_g) 100% 50%;
         background-size: calc(100% / 3) 50%;

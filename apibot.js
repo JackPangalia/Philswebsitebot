@@ -43,7 +43,7 @@ app.use(express.json());
 // Define the openai client
 const openai = new OpenAI({
   apiKey:
-    "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",
+    "",
 });
 
 // Helper function to clean up text

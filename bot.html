@@ -404,6 +404,50 @@
           sendButton.click();
         }
       });
+
+      // Add this after socket initialization
+      let currentSessionId = sessionStorage.getItem('chatSessionId');
+
+      if (currentSessionId) {
+        socket.emit('resume_session', { sessionId: currentSessionId });
+      } else {
+        socket.emit('init_session');
+      }
+
+      // Add these socket listeners after other socket.on handlers
+      socket.on('session_created', (data) => {
+        currentSessionId = data.sessionId;
+        sessionStorage.setItem('chatSessionId', currentSessionId);
+      });
+
+      socket.on('error', (data) => {
+        console.error('Chatbot error:', data.message);
+        // Optionally display error to user
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'chatbot-message error';
+        errorDiv.textContent = 'There was an error with the chat session. Please refresh the page.';
+        messageArea.appendChild(errorDiv);
+      });
+
+      // Add this socket listener after your other socket.on handlers
+      socket.on('clear_chat', (data) => {
+        if (data.sessionId === currentSessionId) {
+          // Clear all messages except the Centonis badge
+          const centonisBadge = document.getElementById('centonis-badge');
+          messageArea.innerHTML = '';
+          messageArea.appendChild(centonisBadge);
+          
+          // Add intro message back
+          addIntroMessage();
+          
+          // Clear the session ID from storage
+          sessionStorage.removeItem('chatSessionId');
+          currentSessionId = null;
+          
+          // Initialize a new session
+          socket.emit('init_session');
+        }
+      });
     </script>
 
     <style>

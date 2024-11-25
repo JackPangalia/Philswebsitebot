@@ -8,7 +8,7 @@ import express from "express";
 import cors from "cors";
 import http from "http";
 import { Server } from "socket.io";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 
 // Create an Express app
 const app = express();
@@ -29,7 +29,7 @@ app.use(cors());
 // Define the openai client
 const openai = new OpenAI({
   apiKey:
-    "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",
+    "",
 });
 
 // Null values of the threadId and assistant yet to be created (These varibles will be populated with the respected values)
@@ -68,25 +68,56 @@ const smartReply = async (message) => {
   const completions = await openai.chat.completions.create({
     model: "gpt-3.5-turbo",
     max_tokens: 150,
-    temperature: 0.3,
-    response_format: { type: "json_object" },
+    temperature: 0.1,
     messages: [
       {
         role: "system",
-        content: `You are a smart reply system. You will be provided a message, generate 3 very short (5-10 word) potential prompts to this message in the below JSON format:
+        content: `You are a professional smart reply system for a real estate chatbot. Your job is to generate three concise, actionable, and general replies in the following JSON format:
 
-Example:
-Input: Hello! 😊 I'm your assistant for Phil Moore and Doris Gee, here to help you with any real estate questions, buying or selling properties, and property searches in Burnaby, Vancouver, Richmond, and Coquitlam. How can I assist you today?
-
-Output:
 {
   "smart_replies": [
-    "Explain the selling process",
-    "Show me a spiciest house in Burnaby",
-    "Is now a good time to buy a house in Vancouver" 
+    "Closely related reply here.",
+    "Tangentially related reply here.",
+    "Completely different topic reply here."
   ]
 }
-`,
+
+### Rules:
+1. **General Responses Only:** Replies must remain high-level and actionable. Avoid niche or overly specific suggestions.  
+   - Example: Instead of "Consider property management options," suggest, "How can I make property investments?"  
+2. **Closely Related Reply:** Respond directly to the main topic but keep it broad and actionable.  
+3. **Tangential Reply:** Suggest a loosely connected but general topic of interest.  
+4. **Different Real Estate Topic:** Offer a suggestion from a completely unrelated general topic. Avoid overlap with the message subject.
+
+### Guidelines:
+- All replies must be conversational, professional, and mimic real user intents.
+- Avoid vague or abstract replies like "consider property management."
+- Replies must be general and suitable for a diverse audience, avoiding detailed or niche topics.
+
+### Example:
+**Input:**  
+"I'm interested in houses for sale in Burnaby."
+
+**Output:**  
+{
+  "smart_replies": [
+    "Show me houses available in Burnaby.",
+    "What are the best neighborhoods in Burnaby?",
+    "Can you explain the home-buying process?"
+  ]
+}
+
+**Input:**  
+"I want to learn about property investments."
+
+**Output:**  
+{
+  "smart_replies": [
+    "What types of properties are best for investment?",
+    "Can I get tips on rental income?",
+    "How does the home-buying process work?"
+  ]
+}`,
       },
       {
         role: "user",
@@ -95,12 +126,12 @@ Output:
     ],
   });
 
-  // console.log("message: ", completions.choices[0].message);
   return completions.choices[0].message.content;
 };
 
+
 // Add these after other const declarations
-const SESSION_TIMEOUT = 15 * 1000; // 30 minutes in milliseconds
+const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
 const sessions = new Map();
 
 // Add this function to manage sessions
@@ -109,7 +140,7 @@ const createSession = () => {
   const session = {
     threadId: null,
     lastActive: Date.now(),
-    timeoutId: null
+    timeoutId: null,
   };
   sessions.set(sessionId, session);
   return sessionId;
@@ -121,9 +152,11 @@ const cleanupSession = async (sessionId) => {
   if (session && session.threadId) {
     try {
       await openai.beta.threads.del(session.threadId);
-      console.log(`Thread ${session.threadId} deleted for session ${sessionId}`);
+      console.log(
+        `Thread ${session.threadId} deleted for session ${sessionId}`
+      );
       // Emit an event to clear messages for this session
-      io.emit('clear_chat', { sessionId });
+      io.emit("clear_chat", { sessionId });
     } catch (error) {
       console.error(`Error deleting thread for session ${sessionId}:`, error);
     }
@@ -146,12 +179,12 @@ io.on("connection", (socket) => {
       sessionId = data.sessionId;
       const session = sessions.get(sessionId);
       session.lastActive = Date.now();
-      
+
       // Clear existing timeout if any
       if (session.timeoutId) {
         clearTimeout(session.timeoutId);
       }
-      
+
       // Set new timeout
       session.timeoutId = setTimeout(() => {
         cleanupSession(sessionId);
@@ -181,17 +214,20 @@ io.on("connection", (socket) => {
 
     const generateResponse = async () => {
       await retrieveAssistant();
-      
+
       // Use existing thread ID from session or create new one
       if (!session.threadId) {
         const thread = await openai.beta.threads.create();
         session.threadId = thread.id;
       }
 
-      const message = await openai.beta.threads.messages.create(session.threadId, {
-        role: "user",
-        content: prompt,
-      });
+      const message = await openai.beta.threads.messages.create(
+        session.threadId,
+        {
+          role: "user",
+          content: prompt,
+        }
+      );
 
       openai.beta.threads.runs
         .stream(session.threadId, {
@@ -228,7 +264,7 @@ io.on("connection", (socket) => {
           socket.emit("responseComplete");
           const quickReplyJSON = await smartReply(fullResponse);
           socket.emit("quickReplies", quickReplyJSON);
-          
+
           // Set new timeout after response is complete
           session.timeoutId = setTimeout(() => {
             cleanupSession(sessionId);

@@ -469,6 +469,7 @@
       }
 
       .quick-replies-container {
+        width: 77%;
         margin-inline: 2rem;
       }
 
@@ -481,11 +482,12 @@
 
       .quick-reply-button {
         border-radius: 0.5rem;
-        border: solid black 1px;
+        border:none;
         padding-inline: 0.6em;
         padding-block: 0.35em;
         margin-block: 0.26em;
-        background-color: white;
+        background-color:#09090b;
+        color: white;
         font-size: 0.95rem;
         text-align: left;
       }
@@ -529,7 +531,7 @@
         box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
         border-bottom-left-radius: 1rem;
         background-color: white;
-        width: 520px;
+        width: 420px;
       }
 
       #chatbot-top-bar-area {
@@ -582,8 +584,10 @@
         border-radius: 0.5rem;
         margin-right: 2rem;
         margin-left: auto;
-        width: 67%;
-        padding: 1.9rem;
+        max-width: 67%;
+        width: fit-content;
+        overflow-wrap:break-word;
+        padding: 1.3rem;
         color: white;
         background-color: #09090b;
         font-size: 0.95rem;
@@ -596,7 +600,7 @@
         margin-left: 2rem;
         margin-right: auto;
         width: 67%;
-        padding: 1.9rem;
+        padding: 1.3rem;
         background-color: #f3f4f6;
         color: #1f2937;
         animation: slideInFromLeft 0.5s forwards;

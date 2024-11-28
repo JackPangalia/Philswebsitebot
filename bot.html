@@ -38,7 +38,7 @@
       </div>
 
       <div id="chatbot-input-area">
-        <p>Disclaimer: AI may not guarantee full accuracy. Please verify.</p>
+        <!-- <p>Disclaimer: AI may not guarantee full accuracy. Please verify.</p> -->
         <div id="search-area">
           <input id="chatbot-input" placeholder="Ask me anything" />
           <button id="send-btn">
@@ -62,10 +62,20 @@
     </div>
 
     <button id="open-chatbot-btn">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke-width="1.5"
+        stroke="currentColor"
+        class="size-6"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="m19.5 8.25-7.5 7.5-7.5-7.5"
+        />
       </svg>
-      
     </button>
 
     <script>
@@ -150,10 +160,16 @@
       let isRefreshing = false;
       let closeTimer;
 
-      // Open the chatbot
+      // Open/Close the chatbot and update button text
       openChatbotBtn.addEventListener("click", () => {
-        chatbotContainer.style.display = "block";
-        messageArea.scrollTop = messageArea.scrollHeight;
+        if (chatbotContainer.style.display === "block") {
+          chatbotContainer.style.display = "none";
+          openChatbotBtn.textContent = "OPEN";
+        } else {
+          chatbotContainer.style.display = "block";
+          messageArea.scrollTop = messageArea.scrollHeight;
+          openChatbotBtn.textContent = "CLOSE";
+        }
       });
 
       // Close the chatbot
@@ -396,14 +412,25 @@
         return formattedResponse;
       }
 
+      // Function to clear smart suggestions
+      function clearSmartSuggestions() {
+        const quickRepliesDiv = document.querySelector(
+          ".quick-replies-container"
+        );
+        if (quickRepliesDiv) {
+          quickRepliesDiv.remove();
+        }
+      }
+
       // Send message handler
       sendButton.addEventListener("click", () => {
         const message = chatInput.value.trim();
-        if (!message) return;
+        if (!message || loadingDiv) return; // Prevent sending if loading
         appendUserMessage(message);
         showLoading();
         socket.emit("send_prompt", { prompt: message });
         chatInput.value = "";
+        clearSmartSuggestions(); // Clear smart suggestions on message send
       });
 
       // Handle enter key
@@ -700,10 +727,11 @@
       }
 
       #chatbot-input-area {
+        background: transparent;
         /* padding-block: 2rem; */
         padding-inline: 1.3rem;
         padding-bottom: 1rem;
-        padding-top: 0.5rem;
+        /* padding-top: 0.5rem; */
       }
 
       #chatbot-input-area p {

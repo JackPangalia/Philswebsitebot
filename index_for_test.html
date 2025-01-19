@@ -21,7 +21,6 @@
             stroke="currentColor"
             class="size-6"
           >
-            z
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -82,8 +81,6 @@
     </button>
 
     <script>
-      // Initialize Socket.IO connection
-      // const socket = io("https://stark-peak-51024-a84cb77499f2.herokuapp.com/");
       const socket = io("http://localhost:3001");
 
       // UI Elements
@@ -108,179 +105,8 @@
       // Chat history management
       const STORAGE_KEY = "chatHistory";
 
-      // Function to add intro message
-      function addIntroMessage() {
-        const label = document.createElement("p");
-        label.className = "chatbot-label";
-        label.textContent = "AI chatbot";
-
-        const intro = document.createElement("p");
-        intro.className = "chatbot-message";
-        intro.innerHTML = `Hello! 😊 I'm your virtual assistant here to help with all things real
-              estate for Phil Moore and Doris Gee. Whether you're searching for a
-              home, have questions about the buying or selling process, or just need
-              some guidance, I'm here for you! Let me know how I can assist, and
-              I'll do my best to find exactly what you're looking for`;
-
-        messageArea.appendChild(label);
-        messageArea.appendChild(intro);
-        saveChatHistory();
-      }
-
-      // Function to save chat history
-      function saveChatHistory() {
-        const messages = Array.from(messageArea.children)
-          .filter((element) => element.id !== "centonis-badge")
-          .map((element) => ({
-            type: element.className,
-            content: element.innerHTML,
-          }));
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      }
-
-      // Function to load chat history
-      function loadChatHistory() {
-        const savedHistory = sessionStorage.getItem(STORAGE_KEY);
-        if (savedHistory) {
-          const messages = JSON.parse(savedHistory);
-          messages.forEach((message) => {
-            const messageDiv = document.createElement("div");
-            messageDiv.className = message.type;
-            messageDiv.innerHTML = message.content;
-            messageArea.appendChild(messageDiv);
-          });
-          messageArea.scrollTop = messageArea.scrollHeight;
-        } else {
-          // Only add intro message if there's no chat history
-          addIntroMessage();
-        }
-      }
-
-      // Load chat history when page loads
-      document.addEventListener("DOMContentLoaded", () => {
-        loadChatHistory();
-      });
-
       let isRefreshing = false;
       let closeTimer;
-
-      // Open/Close the chatbot and update button text
-      openChatbotBtn.addEventListener("click", () => {
-        if (chatbotContainer.style.display === "block") {
-          chatbotContainer.style.display = "none";
-          openChatbotBtn.innerHTML = `AI Chatbot
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6" id="open-icon">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
-      </svg>
-      
-    `;
-        } else {
-          chatbotContainer.style.display = "block";
-          messageArea.scrollTop = messageArea.scrollHeight;
-          openChatbotBtn.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-      </svg>
-    `;
-        }
-      });
-
-      // Close the chatbot
-      closeChatbotBtn.addEventListener("click", () => {
-        chatbotContainer.style.display = "none";
-      });
-
-      function showLoading() {
-        loadingDiv = document.createElement("div");
-        loadingDiv.className = "chatbot-message";
-        loadingDiv.innerHTML = "<div class='loader'></div>";
-        messageArea.appendChild(loadingDiv);
-        messageArea.scrollTop = messageArea.scrollHeight;
-      }
-
-      function removeLoading() {
-        if (loadingDiv) {
-          loadingDiv.remove();
-          loadingDiv = null;
-        }
-      }
-
-      function showPropertyLoading() {
-        propertyLoadingDiv = document.createElement("div");
-        propertyLoadingDiv.className = "chatbot-message";
-        propertyLoadingDiv.innerHTML = "<div class='loader'></div>";
-        currentMessageDiv.appendChild(propertyLoadingDiv);
-        messageArea.scrollTop = messageArea.scrollHeight;
-      }
-
-      function removePropertyLoading() {
-        if (propertyLoadingDiv) {
-          propertyLoadingDiv.remove();
-          propertyLoadingDiv = null;
-        }
-      }
-
-      function appendUserMessage(message) {
-        const messageDiv = document.createElement("div");
-        messageDiv.className = "user-message";
-        messageDiv.textContent = message;
-        messageArea.appendChild(messageDiv);
-        messageArea.scrollTop = messageArea.scrollHeight;
-        saveChatHistory(); // Save after adding user message
-      }
-
-      function startNewAIMessage() {
-        removeLoading();
-        const chatbotLabel = document.createElement("p");
-        chatbotLabel.className = "chatbot-label";
-        chatbotLabel.textContent = "AI chatbot";
-        messageArea.appendChild(chatbotLabel);
-
-        currentMessageDiv = document.createElement("div");
-        currentMessageDiv.className = "chatbot-message";
-        messageArea.appendChild(currentMessageDiv);
-        currentMessage = "";
-        propertyBuffer = "";
-        isInsideProperty = false;
-        tagBuffer = "";
-      }
-
-      function processCharacter(char) {
-        tagBuffer += char;
-        wholeTagBuffer += char;
-        if (tagBuffer.length > 20) {
-          tagBuffer = tagBuffer.slice(-20);
-        }
-
-        if (tagBuffer.includes("<property>")) {
-          isInsideProperty = true;
-          showPropertyLoading();
-          tagBuffer = "";
-          return true;
-        }
-
-        if (tagBuffer.includes("</property>")) {
-          isInsideProperty = false;
-          removePropertyLoading();
-          tagBuffer = "";
-          return true;
-        }
-
-        return false;
-      }
-
-      function updateAIMessage(text) {
-        for (let char of text) {
-          const tagFound = processCharacter(char);
-          currentMessage += char;
-        }
-
-        if (!isInsideProperty) {
-          currentMessageDiv.innerHTML = formatAIResponse(currentMessage);
-          messageArea.scrollTop = messageArea.scrollHeight;
-          saveChatHistory(); // Save after updating AI message
-        }
-      }
 
       // Socket.IO event listeners
       socket.on("textCreated", () => {
@@ -332,112 +158,7 @@
         updateAIMessage("\nOutput:\n```\n" + logs + "\n```\n");
       });
 
-      // Format AI response (updated as per user requests)
-      function formatAIResponse(response) {
-        const lines = response.split("\n");
-        let formattedResponse = "";
-        let inList = false;
-        let inProperty = false;
-        let propertyContent = "";
-        let propertyDetails = "";
-        let propertyImage = "";
-        let listingLink = "";
-        let price = "";
-        let address = "";
-
-        for (let line of lines) {
-          // Replace bold text with semibold
-          line = line.replace(
-            /\*\*(.*?)\*\*/g,
-            "<span class='semibold'>$1</span>"
-          );
-
-          if (line.trim().startsWith("###")) {
-            if (inList) {
-              formattedResponse += "</ul>";
-              inList = false;
-            }
-            const headingText = line.trim().substring(3).trim();
-            formattedResponse += `<h4>${headingText}</h4>`; // Changed to <h4> for smaller titles
-            continue;
-          }
-
-          if (line.trim() === "<property>") {
-            inProperty = true;
-            propertyContent = "<div class='property'>";
-            propertyDetails = "<div class='property-details'>";
-          } else if (line.trim() === "</property>") {
-            inProperty = false;
-            propertyContent +=
-              '<div class="image-container">' +
-              propertyImage +
-              "</div>" +
-              price +
-              propertyDetails +
-              "</div>" +
-              `<p class="address">${address}</p>` +
-              listingLink +
-              "</div>";
-            formattedResponse += propertyContent;
-            propertyContent = "";
-            propertyDetails = "";
-            propertyImage = "";
-            listingLink = "";
-            price = "";
-            address = "";
-          } else if (inProperty) {
-            if (line.startsWith("Price:")) {
-              price = `<p class="price">${line.trim()}</p>`;
-            } else if (line.startsWith("Address:")) {
-              address = line.replace("Address:", "").trim();
-            } else if (line.startsWith("Bedrooms:")) {
-              propertyDetails += `<p class="bedrooms">${line.trim()}</p>`;
-            } else if (line.startsWith("Bathrooms:")) {
-              propertyDetails += `<p class="bathrooms">${line.trim()}</p>`;
-            } else if (line.startsWith("[View Listing]")) {
-              const match = line.match(/\[View Listing\]\((.*?)\)/);
-              if (match) {
-                listingLink = `<a href="${match[1]}" class="view-listing">View Listing</a>`;
-              }
-            } else if (line.startsWith("![Image]")) {
-              const match = line.match(/!\[Image\]\((.*?)\)/);
-              if (match) {
-                propertyImage = `<img src="${match[1]}" alt="Property Image" class="property-image">`;
-              }
-            }
-          } else if (line.trim().startsWith("-")) {
-            if (!inList) {
-              formattedResponse += "<ul>"; // Keep lists non-indented by ensuring no additional styles are applied
-              inList = true;
-            }
-            formattedResponse +=
-              "<li>" + line.trim().substring(1).trim() + "</li>";
-          } else {
-            if (inList) {
-              formattedResponse += "</ul>";
-              inList = false;
-            }
-            line = line.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2">$1</a>');
-            formattedResponse += line + "<br>";
-          }
-        }
-
-        if (inList) {
-          formattedResponse += "</ul>";
-        }
-
-        return formattedResponse;
-      }
-
       // Function to clear smart suggestions
-      function clearSmartSuggestions() {
-        const quickRepliesDiv = document.querySelector(
-          ".quick-replies-container"
-        );
-        if (quickRepliesDiv) {
-          quickRepliesDiv.remove();
-        }
-      }
 
       // Send message handler
       sendButton.addEventListener("click", () => {
@@ -457,14 +178,14 @@
         }
       });
 
-      socket.on("connect", () => {
-        let currentSessionId = sessionStorage.getItem("chatSessionId");
-        if (currentSessionId) {
-          socket.emit("resume_session", { sessionId: currentSessionId });
-        } else {
-          socket.emit("init_session");
-        }
-      });
+      // Add this after socket initialization
+      let currentSessionId = sessionStorage.getItem("chatSessionId");
+
+      if (currentSessionId) {
+        socket.emit("resume_session", { sessionId: currentSessionId });
+      } else {
+        socket.emit("init_session");
+      }
 
       // Add these socket listeners after other socket.on handlers
       socket.on("session_created", (data) => {
@@ -572,7 +293,7 @@
       }
 
       #open-chatbot-btn {
-        border: none;
+        border:none;
         display: flex;
         align-items: center;
         position: absolute;

@@ -24,6 +24,9 @@ let wholeMessage = "";
 // Chat history management
 const STORAGE_KEY = "chatHistory";
 
+// Local storage key for chatbot state
+const CHATBOT_STATE_KEY = "chatbotState";
+
 // Function to add intro message
 function addIntroMessage() {
   const label = document.createElement("p");
@@ -32,16 +35,13 @@ function addIntroMessage() {
 
   const intro = document.createElement("p");
   intro.className = "chatbot-message";
-  intro.innerHTML = `Hello! 😊 I'm your virtual assistant here to help with all things real
-              estate for Phil Moore and Doris Gee. Whether you're searching for a
-              home, have questions about the buying or selling process, or just need
-              some guidance, I'm here for you! Let me know how I can assist, and
-              I'll do my best to find exactly what you're looking for`;
+  intro.innerHTML = `Intro message`;
 
   messageArea.appendChild(label);
   messageArea.appendChild(intro);
   saveChatHistory();
 }
+
 
 // Function to save chat history
 function saveChatHistory() {
@@ -80,32 +80,39 @@ document.addEventListener("DOMContentLoaded", () => {
 let isRefreshing = false;
 let closeTimer;
 
-// Open/Close the chatbot and update button text
-openChatbotBtn.addEventListener("click", () => {
-  if (chatbotContainer.style.display === "block") {
-    chatbotContainer.style.display = "none";
-    openChatbotBtn.innerHTML = `AI Chatbot
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6" id="open-icon">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
-      </svg>
-      
-    `;
-  } else {
-    chatbotContainer.style.display = "block";
-    messageArea.scrollTop = messageArea.scrollHeight;
-    openChatbotBtn.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-      </svg>
-    `;
-  }
+// Function to save chatbot state
+function saveChatbotState(isOpen) {
+  localStorage.setItem(CHATBOT_STATE_KEY, JSON.stringify(isOpen));
+}
+
+// Function to load chatbot state
+function loadChatbotState() {
+  const state = localStorage.getItem(CHATBOT_STATE_KEY);
+  return state ? JSON.parse(state) : false;
+}
+
+// Toggle chatbot visibility and update state
+function toggleChatbotVisibility() {
+  const isCurrentlyOpen = chatbotContainer.style.display === "block";
+  chatbotContainer.style.display = isCurrentlyOpen ? "none" : "block";
+  openChatbotBtn.innerHTML = isCurrentlyOpen
+    ? `Open`
+    : `Close`;
+  saveChatbotState(!isCurrentlyOpen);
+}
+
+// Load chat history and chatbot state on page load
+document.addEventListener("DOMContentLoaded", () => {
+  loadChatHistory();
+  const isChatbotOpen = loadChatbotState();
+  chatbotContainer.style.display = isChatbotOpen ? "block" : "none";
+  openChatbotBtn.innerHTML = isChatbotOpen
+    ? `Close`
+    : `Open`;
 });
 
-// Close the chatbot
-closeChatbotBtn.addEventListener("click", () => {
-  chatbotContainer.style.display = "none";
-});
-
+// Open/Close chatbot button event listener
+openChatbotBtn.addEventListener("click", toggleChatbotVisibility);
 function showLoading() {
   loadingDiv = document.createElement("div");
   loadingDiv.className = "chatbot-message";
@@ -249,7 +256,7 @@ socket.on("codeInterpreterLogs", (logs) => {
 });
 
 // Format AI response (updated as per user requests)
-// formatAIResponse fucntion declartion (Code will be added)
+// formatAIResponse function to format AI response (add back later!)
 
 // Function to clear smart suggestions
 function clearSmartSuggestions() {

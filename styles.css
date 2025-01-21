@@ -192,6 +192,21 @@ h4 {
   animation: slideInFromLeft 0.5s forwards;
 }
 
+/* New history classes without animation */
+.chatbot-message-history {
+  /* Copy all styles from chatbot-message except the animation */
+  /* The final position after the animation would have been applied */
+  transform: translateX(0);
+  opacity: 1;
+}
+
+.user-message-history {
+  /* Copy all styles from user-message except the animation */
+  /* The final position after the animation would have been applied */
+  transform: translateX(0);
+  opacity: 1;
+}
+
 .chatbot-label {
   margin-left: 2rem;
   font-size: small;

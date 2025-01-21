@@ -25,7 +25,6 @@ nav {
   margin-top: 1rem;
 }
 
-
 h4 {
   font-size: 1rem; /* Adjust as needed */
 }
@@ -194,15 +193,29 @@ h4 {
 
 /* New history classes without animation */
 .chatbot-message-history {
-  /* Copy all styles from chatbot-message except the animation */
-  /* The final position after the animation would have been applied */
+  font-size: medium;
+  border-radius: 0.5rem;
+  margin-left: 2rem;
+  margin-right: auto;
+  width: 67%;
+  padding: 1.3rem;
+  background-color: #f3f4f6;
+  color: #1f2937;
   transform: translateX(0);
   opacity: 1;
 }
 
 .user-message-history {
-  /* Copy all styles from user-message except the animation */
-  /* The final position after the animation would have been applied */
+  border-radius: 0.5rem;
+  margin-right: 2rem;
+  margin-left: auto;
+  max-width: 67%;
+  width: fit-content;
+  overflow-wrap: break-word;
+  padding: 1.3rem;
+  color: white;
+  background-color: #09090b;
+  font-size: 0.95rem;
   transform: translateX(0);
   opacity: 1;
 }

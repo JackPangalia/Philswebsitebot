@@ -18,6 +18,9 @@ let propertyLoadingDiv = null;
 let tagBuffer = "";
 let wholeTagBuffer = "";
 let wholeMessage = "";
+// Track current message state
+let isGenerating = false;
+let currentRunId = null;
 // Chat history management
 const STORAGE_KEY = "chatHistory";
 // Function to add intro message
@@ -27,11 +30,7 @@ function addIntroMessage() {
   label.textContent = "AI chatbot";
   const intro = document.createElement("p");
   intro.className = "chatbot-message";
-  intro.innerHTML = `Hello! 😊 I'm your virtual assistant here to help with all things real
-              estate for Phil Moore and Doris Gee. Whether you're searching for a
-              home, have questions about the buying or selling process, or just need
-              some guidance, I'm here for you! Let me know how I can assist, and
-              I'll do my best to find exactly what you're looking for`;
+  intro.innerHTML = `Welcome to phils bot`;
   messageArea.appendChild(label);
   messageArea.appendChild(intro);
   saveChatHistory();
@@ -39,10 +38,16 @@ function addIntroMessage() {
 // Function to save chat history
 function saveChatHistory() {
   const messages = Array.from(messageArea.children)
-    .filter((element) => element.id !== "centonis-badge")
+    .filter((element) => {
+      return (
+        element.id !== "centonis-badge" &&
+        (!isGenerating || element !== currentMessageDiv)
+      );
+    })
     .map((element) => ({
       type: element.className,
       content: element.innerHTML,
+      runId: element.dataset.runId,
     }));
   sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
 }
@@ -133,15 +138,15 @@ function startNewAIMessage() {
   const chatbotLabel = document.createElement("p");
   chatbotLabel.className = "chatbot-label";
   chatbotLabel.textContent = "AI chatbot";
-  messageArea.appendChild(chatbotLabel);
+  chatbotLabel.dataset.runId = currentRunId;
 
   currentMessageDiv = document.createElement("div");
   currentMessageDiv.className = "chatbot-message";
+  currentMessageDiv.dataset.runId = currentRunId;
+
+  messageArea.appendChild(chatbotLabel);
   messageArea.appendChild(currentMessageDiv);
   currentMessage = "";
-  propertyBuffer = "";
-  isInsideProperty = false;
-  tagBuffer = "";
 }
 
 function processCharacter(char) {
@@ -181,8 +186,16 @@ function updateAIMessage(text) {
   }
 }
 
+socket.on("responseComplete", (data) => {
+  isGenerating = false;
+  currentRunId = null;
+  saveChatHistory();
+});
+
 // Socket.IO event listeners
 socket.on("textCreated", () => {
+  isGenerating = true;
+  currentRunId = data.runId;
   startNewAIMessage();
 });
 

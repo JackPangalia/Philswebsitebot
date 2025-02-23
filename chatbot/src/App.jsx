@@ -9,13 +9,17 @@ function App() {
   const [inputMessage, setInputMessage] = useState('');
   const [socket, setSocket] = useState(null);
   const [sessionId, setSessionId] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
-  // Load messages from sessionStorage on initial render
+  // Load messages from sessionStorage and remove incomplete messages
   useEffect(() => {
     const savedMessages = sessionStorage.getItem('chatMessages');
     if (savedMessages) {
-      setMessages(JSON.parse(savedMessages));
+      const parsedMessages = JSON.parse(savedMessages);
+      const completeMessages = parsedMessages.filter(msg => msg.complete);
+      setMessages(completeMessages);
+      sessionStorage.setItem('chatMessages', JSON.stringify(completeMessages));
     }
   }, []);
 
@@ -46,10 +50,10 @@ function App() {
     });
 
     newSocket.on('textDelta', ({ textDelta, snapshot }) => {
+      setIsLoading(false); // Hide loading when streaming starts
       setMessages(prev => {
         const lastMessage = prev[prev.length - 1];
         if (lastMessage && lastMessage.messageType === 'ai' && !lastMessage.complete) {
-          // Update the last AI message
           const updatedMessages = [...prev];
           updatedMessages[prev.length - 1] = {
             ...lastMessage,
@@ -57,7 +61,6 @@ function App() {
           };
           return updatedMessages;
         } else {
-          // Start a new AI message
           return [...prev, {
             messageType: 'ai',
             message: textDelta.value,
@@ -68,6 +71,7 @@ function App() {
     });
 
     newSocket.on('responseComplete', () => {
+      setIsLoading(false);
       setMessages(prev => {
         const updatedMessages = [...prev];
         if (updatedMessages.length > 0) {
@@ -82,12 +86,13 @@ function App() {
 
     newSocket.on('error', (error) => {
       console.error('Socket error:', error);
-      // Add error handling UI as needed
+      setIsLoading(false);
     });
 
     newSocket.on('clear_chat', ({ sessionId: clearedSessionId }) => {
       if (clearedSessionId === sessionId) {
         setMessages([]);
+        setIsLoading(false);
         sessionStorage.removeItem('chatMessages');
         sessionStorage.removeItem('chatSessionId');
       }
@@ -99,16 +104,15 @@ function App() {
     };
   }, []);
 
-  // Auto-scroll to bottom when messages update
+  // Auto-scroll to bottom when messages update or loading state changes
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, isLoading]);
 
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!inputMessage.trim() || !socket) return;
 
-    // Add user message to chat
     const newMessage = {
       messageType: 'user',
       message: inputMessage,
@@ -116,25 +120,19 @@ function App() {
     };
     
     setMessages(prev => [...prev, newMessage]);
+    setIsLoading(true);
 
     // Send message to server
     socket.emit('send_prompt', { prompt: inputMessage });
     setInputMessage('');
   };
 
-  // Add a clear chat function
-  const clearChat = () => {
-    setMessages([]);
-    sessionStorage.removeItem('chatMessages');
-    sessionStorage.removeItem('chatSessionId');
-  };
-
   return (
     <div className="bg-gray-50 w-full h-screen">
       <div className="absolute bottom-16 right-4">
-        <div className="rounded-2xl h-[675px] w-[400px] shadow-sm bg-white">
+        <div className="rounded-2xl h-[675px] w-[400px] shadow-sm bg-white p-5">
           {/* Chat area */}
-          <div className="h-[91%] flex flex-col gap-4 overflow-y-auto px-5 pt-5">
+          <div className="h-[92%] flex flex-col gap-4 overflow-y-auto">
             {messages.map((msg, index) => (
               <Message
                 key={index}
@@ -142,13 +140,16 @@ function App() {
                 message={msg.message}
               />
             ))}
+            {isLoading && (
+              <div className="text-gray-500 italic px-4">Loading...</div>
+            )}
             <div ref={messagesEndRef} />
           </div>
 
           {/* Input field */}
           <form 
             onSubmit={handleSendMessage}
-            className="mx-5 shadow-sm border-2 border-zinc-100 p-1 rounded-4xl flex justify-between focus-within:border-black"
+            className="shadow-sm border-2 border-zinc-100 p-1 rounded-4xl flex justify-between focus-within:border-black"
           >
             <input
               className="outline-none w-[90%] px-4"
@@ -159,7 +160,7 @@ function App() {
             <button 
               type="submit"
               className="hover:cursor-pointer"
-              disabled={!inputMessage.trim()}
+              disabled={!inputMessage.trim() || isLoading}
             >
               <Send />
             </button>

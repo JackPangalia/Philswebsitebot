@@ -11,6 +11,8 @@ function App() {
   const [socket, setSocket] = useState(null); // Socket.IO client instance
   const [sessionId, setSessionId] = useState(null); // Unique session ID
   const [isLoading, setIsLoading] = useState(false); // Loading state indicator
+  const [error, setError] = useState(null); // Error state
+  const [showSessionExpiredModal, setShowSessionExpiredModal] = useState(false); // Session expired modal state
   const messagesEndRef = useRef(null); // Reference to the end of messages for scrolling
   const [isExpanded, setIsExpanded] = useState(false); // Expanded state for chat window
 
@@ -18,12 +20,21 @@ function App() {
   useEffect(() => {
     const savedMessages = sessionStorage.getItem("chatMessages");
     if (savedMessages) {
-      const parsedMessages = JSON.parse(savedMessages);
-      // Filter out incomplete messages from the saved data.
-      const completeMessages = parsedMessages.filter((msg) => msg.complete);
-      setMessages(completeMessages);
-      // Update sessionStorage with the filtered messages.
-      sessionStorage.setItem("chatMessages", JSON.stringify(completeMessages));
+      try {
+        const parsedMessages = JSON.parse(savedMessages);
+        // Filter out incomplete messages from the saved data.
+        const completeMessages = parsedMessages.filter((msg) => msg.complete);
+        setMessages(completeMessages);
+        // Update sessionStorage with the filtered messages.
+        sessionStorage.setItem(
+          "chatMessages",
+          JSON.stringify(completeMessages)
+        );
+      } catch (error) {
+        console.error("Error parsing saved messages:", error);
+        // Clear corrupted messages
+        sessionStorage.removeItem("chatMessages");
+      }
     }
   }, []);
 
@@ -36,7 +47,11 @@ function App() {
 
   // Connect to Socket.IO server and handle session initialization
   useEffect(() => {
-    const newSocket = io("http://localhost:3001"); // Connect to the server
+    const newSocket = io("http://localhost:3001", {
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    }); // Connect to the server with reconnection options
     setSocket(newSocket);
 
     // Attempt to resume a previous session or initialize a new one
@@ -51,6 +66,21 @@ function App() {
     newSocket.on("session_created", (data) => {
       setSessionId(data.sessionId);
       sessionStorage.setItem("chatSessionId", data.sessionId);
+
+      // If this was due to a cleared chat or expired session, clear the messages
+      if (data.wasCleared || data.wasExpired) {
+        setMessages([]);
+        sessionStorage.removeItem("chatMessages");
+
+        if (data.wasExpired) {
+          setShowSessionExpiredModal(true);
+        }
+      }
+    });
+
+    newSocket.on("session_resumed", (data) => {
+      setSessionId(data.sessionId);
+      // Session was successfully resumed, no need to change the message state
     });
 
     // Handle incoming text deltas (streaming responses)
@@ -103,15 +133,47 @@ function App() {
     newSocket.on("error", (error) => {
       console.error("Socket error:", error);
       setIsLoading(false);
+      setError(error.message || "An error occurred");
+
+      // Show appropriate error message based on error code
+      if (error.code === "SESSION_INVALID") {
+        // Clear local session data and reinitialize
+        sessionStorage.removeItem("chatSessionId");
+        sessionStorage.removeItem("chatMessages");
+        setMessages([]);
+
+        // Try to initialize a new session after a brief delay
+        setTimeout(() => {
+          newSocket.emit("init_session");
+        }, 1000);
+      }
+
+      // Clear error after 5 seconds
+      setTimeout(() => setError(null), 5000);
     });
 
     // Handle chat clearing events
-    newSocket.on("clear_chat", ({ sessionId: clearedSessionId }) => {
+    newSocket.on("clear_chat", ({ sessionId: clearedSessionId, reason }) => {
       if (clearedSessionId === sessionId) {
         setMessages([]);
         setIsLoading(false);
         sessionStorage.removeItem("chatMessages");
-        sessionStorage.removeItem("chatSessionId");
+
+        if (reason === "session_timeout") {
+          sessionStorage.removeItem("chatSessionId");
+          setShowSessionExpiredModal(true);
+        }
+      }
+    });
+
+    // Handle reconnection events
+    newSocket.on("connect", () => {
+      // If we already have a session ID, try to resume it
+      const currentSessionId = sessionStorage.getItem("chatSessionId");
+      if (currentSessionId) {
+        newSocket.emit("resume_session", { sessionId: currentSessionId });
+      } else {
+        newSocket.emit("init_session");
       }
     });
 
@@ -145,6 +207,19 @@ function App() {
     setInputMessage("");
   };
 
+  // Handle clearing the chat
+  const handleClearChat = () => {
+    if (!socket || !sessionId) return;
+
+    // Send clear_chat event to the server
+    socket.emit("clear_chat", { sessionId });
+  };
+
+  // Handle dismissing the session expired modal
+  const handleDismissSessionExpiredModal = () => {
+    setShowSessionExpiredModal(false);
+  };
+
   return (
     <div className="bg-gray-50 w-full h-screen flex items-center justify-center">
       <div
@@ -159,22 +234,62 @@ function App() {
         {/* Top Bar */}
         <div className="flex items-center justify-between p-3 border-b border-gray-200">
           <div className="flex items-center">
-            <img src="/logo_placeholder.jpg" alt="logo" className="w-auto h-6" />
+            <img
+              src="/logo_placeholder.jpg"
+              alt="logo"
+              className="w-auto h-6"
+            />
           </div>
-          <button
-            className="hover:text-gray-600 hover:cursor-pointer hover:bg-zinc-100 p-1"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            <Expand />
-          </button>
+          <div className="flex items-center space-x-2">
+            {/* Clear Chat Button */}
+            {messages.length > 0 && (
+              <button
+                className="text-sm text-gray-500 hover:text-red-500 hover:cursor-pointer px-2 py-1 rounded hover:bg-gray-100"
+                onClick={handleClearChat}
+                title="Clear chat history"
+              >
+                Clear
+              </button>
+            )}
+            <button
+              className="hover:text-gray-600 hover:cursor-pointer hover:bg-zinc-100 p-1"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              <Expand />
+            </button>
+          </div>
         </div>
+
+        {/* Error Banner */}
+        {error && (
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-2 text-sm">
+            <p className="font-bold">Error</p>
+            <p>{error} Refresh the page or try to send a message</p>
+          </div>
+        )}
 
         {/* Chat area (Messages) */}
         <div className="flex-1 overflow-y-auto px-5 pt-5 pb-[4.3rem] space-y-4">
+          {messages.length === 0 && (
+            <div className="text-center text-gray-500 mt-10">
+              <p>Start a new conversation</p>
+            </div>
+          )}
+
           {messages.map((msg, index) => (
-            <Message key={index} messageType={msg.messageType} message={msg.message} />
+            <Message
+              key={index}
+              messageType={msg.messageType}
+              message={msg.message}
+            />
           ))}
-          {isLoading && <div className="loader bg-red-400 "></div>}
+
+          {isLoading && (
+            <div className="flex items-center mt-2 text-gray-500">
+              <div className="loader "></div>
+            </div>
+          )}
+
           <div ref={messagesEndRef} />
         </div>
 
@@ -200,6 +315,25 @@ function App() {
           </form>
         </div>
       </div>
+
+      {/* Session Expired Modal */}
+      {showSessionExpiredModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h3 className="text-lg font-medium mb-2">Session Expired</h3>
+            <p className="mb-4">
+              Your chat session has expired due to inactivity. A new session has
+              been created for you.
+            </p>
+            <button
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              onClick={handleDismissSessionExpiredModal}
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
